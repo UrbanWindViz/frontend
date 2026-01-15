@@ -1,17 +1,14 @@
-import React from "react";
+import React, { useState } from "react";
 import type { DatasetInfo } from "../api/contract";
 
 type Props = {
   loading: boolean;
-
   datasets: DatasetInfo[];
   datasetId: string | null;
   onDatasetId: (id: string) => void;
-
   heights: number[];
   heightMeters: number | null;
   onHeightMeters: (height: number) => void;
-
   resolution: { nx: number; ny: number };
   onResolution: (res: { nx: number; ny: number }) => void;
 };
@@ -24,42 +21,57 @@ const PRESET_RESOLUTIONS = [
 ];
 
 export function Controls(props: Props) {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
   const currentResKey = `${props.resolution.nx}×${props.resolution.ny}`;
   const hasDataset = props.datasetId !== null;
 
-  return (
-    <div
-      style={{
-        position: "absolute",
-        top: 12,
-        left: 12,
-        width: 360,
-        background: "rgba(255,255,255,0.92)",
-        borderRadius: 12,
-        padding: 12,
-        boxShadow: "0 6px 20px rgba(0,0,0,0.15)",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "baseline",
-        }}
+  if (isCollapsed) {
+    return (
+      <button
+        className="controls-collapsed"
+        onClick={() => setIsCollapsed(false)}
+        title="Einstellungen öffnen"
       >
-        <div style={{ fontWeight: 700 }}>UrbanWindViz</div>
-        <div style={{ fontSize: 12, opacity: 0.7 }}>
-          {props.loading ? "Loading…" : "Ready"}
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <circle cx="12" cy="12" r="3" />
+          <path d="M12 1v6m0 6v6M1 12h6m6 0h6" />
+        </svg>
+      </button>
+    );
+  }
+
+  return (
+    <div className="controls-panel">
+      <div className="controls-header">
+        <div className="controls-title">UrbanWindViz</div>
+        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+          <div className="controls-status">
+            {props.loading ? "Loading…" : "Ready"}
+          </div>
+          <button
+            className="controls-collapse-btn"
+            onClick={() => setIsCollapsed(true)}
+            title="Einstellungen minimieren"
+          >
+            ✕
+          </button>
         </div>
       </div>
 
-      {/* Dataset Selection */}
-      <div style={{ marginTop: 10 }}>
-        <div style={{ fontSize: 12, opacity: 0.8 }}>Dataset</div>
+      <div className="control-group">
+        <label className="control-label">Dataset</label>
         <select
+          className="control-select"
           value={props.datasetId ?? ""}
           onChange={(e) => props.onDatasetId(e.target.value)}
-          style={{ width: "100%", padding: "4px 8px" }}
           disabled={props.datasets.length === 0}
         >
           {props.datasets.length === 0 ? (
@@ -79,14 +91,13 @@ export function Controls(props: Props) {
         </select>
       </div>
 
-      {/* Height Selection */}
       {hasDataset && (
-        <div style={{ marginTop: 10 }}>
-          <div style={{ fontSize: 12, opacity: 0.8 }}>Höhe</div>
+        <div className="control-group">
+          <label className="control-label">Höhe</label>
           <select
+            className="control-select"
             value={props.heightMeters ?? ""}
             onChange={(e) => props.onHeightMeters(Number(e.target.value))}
-            style={{ width: "100%", padding: "4px 8px" }}
             disabled={props.heights.length === 0}
           >
             {props.heights.length === 0 ? (
@@ -102,11 +113,11 @@ export function Controls(props: Props) {
         </div>
       )}
 
-      {/* Resolution Selection */}
       {hasDataset && (
-        <div style={{ marginTop: 10 }}>
-          <div style={{ fontSize: 12, opacity: 0.8 }}>Auflösung</div>
+        <div className="control-group">
+          <label className="control-label">Auflösung</label>
           <select
+            className="control-select"
             value={currentResKey}
             onChange={(e) => {
               const preset = PRESET_RESOLUTIONS.find(
@@ -116,7 +127,6 @@ export function Controls(props: Props) {
                 props.onResolution({ nx: preset.nx, ny: preset.ny });
               }
             }}
-            style={{ width: "100%", padding: "4px 8px" }}
           >
             {PRESET_RESOLUTIONS.map((preset) => (
               <option
@@ -127,7 +137,7 @@ export function Controls(props: Props) {
               </option>
             ))}
           </select>
-          <div style={{ fontSize: 10, opacity: 0.6, marginTop: 4 }}>
+          <div className="control-hint">
             {props.resolution.nx}×{props.resolution.ny} ={" "}
             {props.resolution.nx * props.resolution.ny} Pfeile
           </div>

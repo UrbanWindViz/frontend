@@ -18,12 +18,9 @@ export function MapView({ datasetExtend, windField, onViewportBbox }: Props) {
 
   const layers = useMemo(() => {
     if (windField) {
-      console.debug("Rendering new wind field as layer.", windField);
       return [buildWindArrowLayer(windField)];
-    } else {
-      console.debug("Wind field is empty.");
-      return [];
     }
+    return [];
   }, [windField]);
 
   useEffect(() => {
@@ -42,7 +39,6 @@ export function MapView({ datasetExtend, windField, onViewportBbox }: Props) {
               "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png",
             ],
             tileSize: 256,
-            attribution: "&copy; OpenStreetMap contributors",
           },
         },
         layers: [
@@ -61,10 +57,6 @@ export function MapView({ datasetExtend, windField, onViewportBbox }: Props) {
     mapRef.current = map;
     overlayRef.current = overlay;
 
-    //
-    // Emits changed area on
-    // - movement
-    // - zoom
     const emitBbox = () => {
       const b = map.getBounds();
       onViewportBbox({
@@ -77,22 +69,14 @@ export function MapView({ datasetExtend, windField, onViewportBbox }: Props) {
     map.on("moveend", emitBbox);
     map.on("zoomend", emitBbox);
 
-    //
-    // Cleanup
     return () => {
       overlay.finalize();
       map.remove();
     };
   }, [onViewportBbox]);
 
-  //
-  // Re-Size displayed map to area of selected dataset
-  // should only run once on selection
   useEffect(() => {
-    if (!datasetExtend) return;
-
-    console.debug("Re-Sizing map to new dataset-extend.", datasetExtend);
-    if (!mapRef.current) return;
+    if (!datasetExtend || !mapRef.current) return;
 
     mapRef.current.fitBounds(
       [
@@ -103,13 +87,11 @@ export function MapView({ datasetExtend, windField, onViewportBbox }: Props) {
     );
   }, [datasetExtend]);
 
-  //
-  // Updates arrow-overly
   useEffect(() => {
     if (overlayRef.current) {
       overlayRef.current.setProps({ layers });
     }
   }, [layers]);
 
-  return <div ref={containerRef} style={{ width: "100%", height: "100%" }} />;
+  return <div ref={containerRef} className="map-container" />;
 }

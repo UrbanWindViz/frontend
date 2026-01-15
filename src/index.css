@@ -1,0 +1,234 @@
+/* Reset & Base */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+/* App Layout */
+.app-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.app-main {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Map */
+.map-container {
+  width: 100%;
+  height: 100%;
+}
+
+/* Verstecke Maplibre Attribution (wird in Footer verschoben) */
+.maplibregl-ctrl-attrib,
+.mapboxgl-ctrl-attrib {
+  display: none !important;
+}
+
+/* Footer */
+.app-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.95);
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 16px;
+  font-size: 11px;
+  color: #666;
+  z-index: 1000;
+  backdrop-filter: blur(8px);
+}
+
+.footer-attribution {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.footer-attribution a {
+  color: #0066cc;
+  text-decoration: none;
+}
+
+.footer-attribution a:hover {
+  text-decoration: underline;
+}
+
+.footer-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+.footer-status.checking {
+  background: rgba(200, 200, 200, 0.15);
+  color: #666;
+}
+
+.footer-status.up {
+  background: rgba(0, 160, 0, 0.15);
+  color: #0a5;
+}
+
+.footer-status.down {
+  background: rgba(200, 0, 0, 0.15);
+  color: #c00;
+}
+
+.footer-status-time {
+  font-size: 10px;
+  opacity: 0.6;
+}
+
+/* Controls Panel - Expanded */
+.controls-panel {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 360px;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(8px);
+  z-index: 100;
+  animation: fadeIn 0.2s ease;
+}
+
+.controls-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 16px;
+}
+
+.controls-title {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.controls-status {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.control-group {
+  margin-top: 12px;
+}
+
+.control-label {
+  font-size: 12px;
+  opacity: 0.8;
+  margin-bottom: 4px;
+  display: block;
+}
+
+.control-select {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 6px;
+  background: white;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.control-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.control-hint {
+  font-size: 10px;
+  opacity: 0.6;
+  margin-top: 4px;
+}
+
+/* Controls Panel - Collapsed */
+.controls-collapsed {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.92);
+  border: none;
+  border-radius: 50%;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #333;
+  transition: all 0.2s ease;
+  z-index: 100;
+  animation: fadeIn 0.2s ease;
+}
+
+.controls-collapsed:hover {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  transform: scale(1.05);
+}
+
+.controls-collapsed svg {
+  transition: transform 0.2s ease;
+}
+
+.controls-collapsed:hover svg {
+  transform: rotate(90deg);
+}
+
+/* Controls Collapse Button */
+.controls-collapse-btn {
+  background: transparent;
+  border: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  font-size: 16px;
+  transition: all 0.2s ease;
+}
+
+.controls-collapse-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #333;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

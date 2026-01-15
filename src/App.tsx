@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Controls } from "./ui/Controls";
 import { MapView } from "./map/MapView";
+import { Footer } from "./ui/Footer";
 import { checkHealth } from "./api/health";
 import type { BBox, DatasetInfo, WindFieldGrid } from "./api/contract";
 import { fetchDatasets } from "./api/datasets";
 import { fetchWindFieldHttp } from "./api/wind";
+import "./index.css";
 
 const HEALTH_INTERVAL_MS = 10_000;
 
@@ -50,7 +52,6 @@ export function App() {
     };
 
     runCheck();
-
     const id = setInterval(runCheck, HEALTH_INTERVAL_MS);
 
     return () => {
@@ -95,21 +96,9 @@ export function App() {
   );
 
   const canQuery = useMemo(() => {
-    const result =
-      !!bbox &&
-      !!selectedDataset &&
-      heightMeters !== null &&
-      heights.length > 0;
-
-    console.debug("Can query:", {
-      bbox: !!bbox,
-      dataset: !!selectedDataset,
-      height: heightMeters !== null,
-      heights: heights.length > 0,
-      result,
-    });
-
-    return result;
+    return (
+      !!bbox && !!selectedDataset && heightMeters !== null && heights.length > 0
+    );
   }, [bbox, selectedDataset, heightMeters, heights.length]);
 
   const query = useMemo(() => {
@@ -148,53 +137,31 @@ export function App() {
   );
 
   return (
-    <div style={{ height: "100vh", position: "relative" }}>
-      <MapView
-        datasetExtend={datasetExtend}
-        windField={windField}
-        onViewportBbox={onViewportBbox}
-      />
+    <div className="app-container">
+      <div className="app-main">
+        <MapView
+          datasetExtend={datasetExtend}
+          windField={windField}
+          onViewportBbox={onViewportBbox}
+        />
 
-      <Controls
-        loading={loading}
-        datasets={datasets}
-        datasetId={datasetId}
-        onDatasetId={(id) => {
-          const ds = datasets.find((d) => d.id === id);
-          if (ds) selectDataset(ds);
-        }}
-        heights={heights}
-        heightMeters={heightMeters}
-        onHeightMeters={setHeightMeters}
-        resolution={resolution}
-        onResolution={setResolution}
-      />
+        <Controls
+          loading={loading}
+          datasets={datasets}
+          datasetId={datasetId}
+          onDatasetId={(id) => {
+            const ds = datasets.find((d) => d.id === id);
+            if (ds) selectDataset(ds);
+          }}
+          heights={heights}
+          heightMeters={heightMeters}
+          onHeightMeters={setHeightMeters}
+          resolution={resolution}
+          onResolution={setResolution}
+        />
+      </div>
 
-      <footer
-        style={{
-          position: "fixed",
-          bottom: 12,
-          right: 12,
-          fontSize: 12,
-          padding: "6px 10px",
-          borderRadius: 8,
-          background:
-            backendUp === null
-              ? "#eee"
-              : backendUp
-              ? "rgba(0,160,0,0.15)"
-              : "rgba(200,0,0,0.15)",
-          color: backendUp === null ? "#666" : backendUp ? "#0a5" : "#c00",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-        }}
-      >
-        Backend: {backendUp === null ? "CHECKING …" : backendUp ? "UP" : "DOWN"}
-        {lastCheck && (
-          <div style={{ fontSize: 10, opacity: 0.6 }}>
-            last check: {lastCheck.toLocaleTimeString()}
-          </div>
-        )}
-      </footer>
+      <Footer backendUp={backendUp} lastCheck={lastCheck} />
     </div>
   );
 }
