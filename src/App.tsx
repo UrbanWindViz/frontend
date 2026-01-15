@@ -1,11 +1,19 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { Controls } from "./ui/Controls";
 import { checkHealth } from "./api/health";
+import type { DatasetInfo } from "./api/contract";
+import { fetchDatasets } from "./api/datasets";
 
 const HEALTH_INTERVAL_MS = 10_000;
 
 export function App() {
   const [backendUp, setBackendUp] = useState<boolean | null>(null);
   const [lastCheck, setLastCheck] = useState<Date | null>(null);
+
+  const [loading, setLoading] = useState(false);
+
+  const [datasets, setDatasets] = useState<DatasetInfo[]>([]);
+  const [datasetId, setDatasetId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -40,9 +48,41 @@ export function App() {
     };
   }, []);
 
+  useEffect(() => {
+    const ac = new AbortController();
+
+    fetchDatasets(ac.signal)
+      .then((ds) => {
+        setDatasets(ds);
+        ds.length === 1 && selectDataset(ds[0]);
+      })
+      .catch((e) => {
+        if (e?.name !== "AbortError") console.error(e);
+      });
+
+    return () => ac.abort();
+  }, []);
+
+  const selectDataset = useCallback(
+    (ds: DatasetInfo) => {
+      setDatasetId(ds.id);
+    },
+    [setDatasetId]
+  );
+
   return (
     <div style={{ height: "100vh", position: "relative" }}>
       {/* TODO Main implementation */}
+
+      <Controls
+        loading={loading}
+        datasets={datasets}
+        datasetId={datasetId}
+        onDatasetId={(id) => {
+          const ds = datasets.find((d) => d.id === id);
+          if (ds) selectDataset(ds);
+        }}
+      />
 
       <footer
         style={{
