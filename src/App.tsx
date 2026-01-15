@@ -23,7 +23,7 @@ export function App() {
   const [heights, setHeights] = useState<number[]>([]);
   const [heightMeters, setHeightMeters] = useState<number | null>(null);
 
-  const [resolution, setResolution] = useState({ nx: 300, ny: 300 });
+  const [resolution, setResolution] = useState({ nx: 100, ny: 100 });
 
   const [windField, setWindField] = useState<WindFieldGrid | null>(null);
 
@@ -163,6 +163,11 @@ export function App() {
           const ds = datasets.find((d) => d.id === id);
           if (ds) selectDataset(ds);
         }}
+        heights={heights}
+        heightMeters={heightMeters}
+        onHeightMeters={setHeightMeters}
+        resolution={resolution}
+        onResolution={setResolution}
       />
 
       <footer

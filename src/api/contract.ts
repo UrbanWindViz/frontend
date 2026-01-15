@@ -1,5 +1,7 @@
 export type HealthResponse = {
   status: string;
+  source: string;
+  dataDir: string;
 };
 
 export type BBox = {
@@ -36,11 +38,12 @@ export type WindQuery = {
   heightMeters: number;
   bbox: BBox;
   resolution: { nx: number; ny: number };
+  wsRef?: number;
+  wdRef?: number;
 };
 
 export type WindFieldGrid = {
   datasetId: string;
-
   heightMeters: number;
 
   bbox: BBox;
@@ -53,4 +56,12 @@ export type WindFieldGrid = {
 
   speedMin: number;
   speedMax: number;
+};
+
+export type WindFieldGridWithPoints = WindFieldGrid & {
+  xPoints?: Float32Array;
+  yPoints?: Float32Array;
+  uPoints?: Float32Array;
+  vPoints?: Float32Array;
+  wPoints?: Float32Array;
 };
