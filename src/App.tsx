@@ -2,10 +2,17 @@ import { useCallback, useEffect, useState } from "react";
 import { Controls } from "./ui/Controls";
 import { MapView } from "./map/MapView";
 import { checkHealth } from "./api/health";
-import type { DatasetInfo } from "./api/contract";
+import type { BBox, DatasetInfo } from "./api/contract";
 import { fetchDatasets } from "./api/datasets";
 
 const HEALTH_INTERVAL_MS = 10_000;
+
+const WORLD_BBOX: BBox = {
+  minLon: -180,
+  maxLon: 180,
+  minLat: -85,
+  maxLat: 85,
+};
 
 export function App() {
   const [backendUp, setBackendUp] = useState<boolean | null>(null);
@@ -15,6 +22,8 @@ export function App() {
 
   const [datasets, setDatasets] = useState<DatasetInfo[]>([]);
   const [datasetId, setDatasetId] = useState<string | null>(null);
+
+  const [bbox, setBbox] = useState<BBox>(WORLD_BBOX);
 
   useEffect(() => {
     let cancelled = false;
@@ -67,13 +76,14 @@ export function App() {
   const selectDataset = useCallback(
     (ds: DatasetInfo) => {
       setDatasetId(ds.id);
+      setBbox(ds.datasetExtent);
     },
     [setDatasetId]
   );
 
   return (
     <div style={{ height: "100vh", position: "relative" }}>
-      <MapView />
+      <MapView datasetViewBbox={bbox} />
 
       <Controls
         loading={loading}

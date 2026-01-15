@@ -1,9 +1,17 @@
 import React, { useEffect, useRef } from "react";
 import maplibregl, { Map } from "maplibre-gl";
+import type { BBox } from "../api/contract";
+import { MAP_FIT_PADDING } from "./config";
 
-export function MapView() {
+type Props = {
+  datasetViewBbox: BBox;
+};
+
+export function MapView({ datasetViewBbox }: Props) {
   const mapRef = useRef<Map | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+
+  console.log(datasetViewBbox);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -40,6 +48,18 @@ export function MapView() {
       map.remove();
     };
   }, []);
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    mapRef.current.fitBounds(
+      [
+        [datasetViewBbox.minLon, datasetViewBbox.minLat],
+        [datasetViewBbox.maxLon, datasetViewBbox.maxLat],
+      ],
+      { padding: MAP_FIT_PADDING, duration: 10 }
+    );
+  }, [datasetViewBbox]);
 
   return <div ref={containerRef} style={{ width: "100%", height: "100%" }} />;
 }

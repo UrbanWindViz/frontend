@@ -12,6 +12,6 @@ export type BBox = {
 export type DatasetInfo = {
   id: string;
   name: string;
-  bbox: BBox;
+  datasetExtent: BBox;
   availableHeightsMeters: number[];
 };
