@@ -1,8 +1,5 @@
 import { API_BASE } from "./config";
-
-export type HealthResponse = {
-  status: string;
-};
+import type { HealthResponse } from "./contract";
 
 export async function checkHealth(signal?: AbortSignal): Promise<boolean> {
   const res = await fetch(`${API_BASE}/api/health`, { signal });
