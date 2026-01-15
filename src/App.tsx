@@ -1,18 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Controls } from "./ui/Controls";
 import { MapView } from "./map/MapView";
 import { checkHealth } from "./api/health";
-import type { BBox, DatasetInfo } from "./api/contract";
+import type { BBox, DatasetInfo, WindFieldGrid } from "./api/contract";
 import { fetchDatasets } from "./api/datasets";
+import { fetchWindFieldHttp } from "./api/wind";
 
 const HEALTH_INTERVAL_MS = 10_000;
-
-const WORLD_BBOX: BBox = {
-  minLon: -180,
-  maxLon: 180,
-  minLat: -85,
-  maxLat: 85,
-};
 
 export function App() {
   const [backendUp, setBackendUp] = useState<boolean | null>(null);
@@ -23,7 +17,15 @@ export function App() {
   const [datasets, setDatasets] = useState<DatasetInfo[]>([]);
   const [datasetId, setDatasetId] = useState<string | null>(null);
 
-  const [bbox, setBbox] = useState<BBox>(WORLD_BBOX);
+  const [datasetExtend, setDatasetExtend] = useState<BBox | null>(null);
+  const [bbox, setBbox] = useState<BBox | null>(null);
+
+  const [heights, setHeights] = useState<number[]>([]);
+  const [heightMeters, setHeightMeters] = useState<number | null>(null);
+
+  const [resolution, setResolution] = useState({ nx: 300, ny: 300 });
+
+  const [windField, setWindField] = useState<WindFieldGrid | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -76,14 +78,82 @@ export function App() {
   const selectDataset = useCallback(
     (ds: DatasetInfo) => {
       setDatasetId(ds.id);
-      setBbox(ds.datasetExtent);
+      setDatasetExtend(ds.datasetExtent);
+
+      setHeights(ds.availableHeightsMeters ?? []);
+      const defaultHeight = ds.availableHeightsMeters?.[0] ?? null;
+      setHeightMeters(defaultHeight);
+
+      setWindField(null);
     },
     [setDatasetId]
   );
 
+  const selectedDataset = useMemo(
+    () => (datasetId ? datasets.find((d) => d.id === datasetId) ?? null : null),
+    [datasets, datasetId]
+  );
+
+  const canQuery = useMemo(() => {
+    const result =
+      !!bbox &&
+      !!selectedDataset &&
+      heightMeters !== null &&
+      heights.length > 0;
+
+    console.debug("Can query:", {
+      bbox: !!bbox,
+      dataset: !!selectedDataset,
+      height: heightMeters !== null,
+      heights: heights.length > 0,
+      result,
+    });
+
+    return result;
+  }, [bbox, selectedDataset, heightMeters, heights.length]);
+
+  const query = useMemo(() => {
+    if (!canQuery) return null;
+
+    return {
+      datasetId: selectedDataset!.id,
+      heightMeters: heightMeters!,
+      bbox: bbox!,
+      resolution,
+    };
+  }, [canQuery, selectedDataset, heightMeters, bbox, resolution]);
+
+  useEffect(() => {
+    if (!query) return;
+
+    const ac = new AbortController();
+    setLoading(true);
+
+    fetchWindFieldHttp(query, ac.signal)
+      .then(setWindField)
+      .catch((err) => {
+        if (err?.name !== "AbortError") console.error(err);
+      })
+      .finally(() => setLoading(false));
+
+    return () => ac.abort();
+  }, [query]);
+
+  const onViewportBbox = useCallback(
+    (b: BBox) => {
+      if (!selectedDataset) return;
+      setBbox(b);
+    },
+    [selectedDataset]
+  );
+
   return (
     <div style={{ height: "100vh", position: "relative" }}>
-      <MapView datasetViewBbox={bbox} />
+      <MapView
+        datasetExtend={datasetExtend}
+        windField={windField}
+        onViewportBbox={onViewportBbox}
+      />
 
       <Controls
         loading={loading}
