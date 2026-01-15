@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Controls } from "./ui/Controls";
+import { MapView } from "./map/MapView";
 import { checkHealth } from "./api/health";
 import type { DatasetInfo } from "./api/contract";
 import { fetchDatasets } from "./api/datasets";
@@ -72,7 +73,7 @@ export function App() {
 
   return (
     <div style={{ height: "100vh", position: "relative" }}>
-      {/* TODO Main implementation */}
+      <MapView />
 
       <Controls
         loading={loading}
