@@ -1,5 +1,5 @@
 import { API_BASE } from "./config";
-import type { BackendWindResponse, WindFieldGrid, WindQuery } from "./contract";
+import type { WindQuery, BackendWindResponse, WindFieldGrid } from "./contract";
 
 function b64ToFloat32(b64: string): Float32Array {
   const bin = atob(b64);
@@ -47,9 +47,11 @@ export async function fetchWindFieldHttp(
     bbox: data.bbox,
     nx: data.nx,
     ny: data.ny,
-    u,
-    v,
+    u: b64ToFloat32(data.u_b64),
+    v: b64ToFloat32(data.v_b64),
     speedMin: data.speedMin,
     speedMax: data.speedMax,
+    lon: data.lon_b64 ? b64ToFloat32(data.lon_b64) : undefined,
+    lat: data.lat_b64 ? b64ToFloat32(data.lat_b64) : undefined,
   };
 }

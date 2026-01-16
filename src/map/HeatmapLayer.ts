@@ -23,8 +23,13 @@ export function buildWindHeatmapLayer(field: WindFieldGrid): Layer {
 
       if (!isFinite(u) || !isFinite(v)) continue;
 
-      const lon = minLon + ((i + 0.5) / nx) * (maxLon - minLon);
-      const lat = minLat + ((j + 0.5) / ny) * (maxLat - minLat);
+      const lon = field.lon
+        ? field.lon[idx]
+        : minLon + ((i + 0.5) / nx) * (maxLon - minLon);
+      const lat = field.lat
+        ? field.lat[idx]
+        : minLat + ((j + 0.5) / ny) * (maxLat - minLat);
+
       const speed = Math.hypot(u, v);
 
       data.push({ position: [lon, lat], speed });
@@ -39,11 +44,11 @@ export function buildWindHeatmapLayer(field: WindFieldGrid): Layer {
     getPosition: (d) => d.position,
     getFillColor: (d) => {
       const rgba = speedToRgba(d.speed, field.speedMin, field.speedMax);
-      return [rgba[0], rgba[1], rgba[2], 10];
+      return [rgba[0], rgba[1], rgba[2], 60];
     },
 
-    radiusMinPixels: 12,
-    radiusMaxPixels: 80,
+    radiusMinPixels: 6,
+    radiusMaxPixels: 6,
     getRadius: (d) => {
       const lonSpan = maxLon - minLon;
       const latSpan = maxLat - minLat;
@@ -53,7 +58,7 @@ export function buildWindHeatmapLayer(field: WindFieldGrid): Layer {
     },
     radiusUnits: "meters",
 
-    opacity: 1,
+    opacity: 0.5,
     stroked: false,
     filled: true,
   });

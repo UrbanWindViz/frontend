@@ -31,6 +31,9 @@ export type BackendWindResponse = {
 
   speedMin: number;
   speedMax: number;
+
+  lon_b64?: string;
+  lat_b64?: string;
 };
 
 export type WindQuery = {
@@ -47,7 +50,6 @@ export type WindFieldGrid = {
   heightMeters: number;
 
   bbox: BBox;
-
   nx: number;
   ny: number;
 
@@ -56,6 +58,9 @@ export type WindFieldGrid = {
 
   speedMin: number;
   speedMax: number;
+
+  lon?: Float32Array;
+  lat?: Float32Array;
 };
 
 export type WindFieldGridWithPoints = WindFieldGrid & {

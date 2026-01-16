@@ -22,8 +22,12 @@ export function buildWindArrowLayer(field: WindFieldGrid): Layer {
     for (let i = 0; i < nx; i++) {
       const idx = j * nx + i;
 
-      const lon = minLon + ((i + 0.5) / nx) * (maxLon - minLon);
-      const lat = minLat + ((j + 0.5) / ny) * (maxLat - minLat);
+      const lon = field.lon
+        ? field.lon[idx]
+        : minLon + ((i + 0.5) / nx) * (maxLon - minLon);
+      const lat = field.lat
+        ? field.lat[idx]
+        : minLat + ((j + 0.5) / ny) * (maxLat - minLat);
 
       const u = field.u[idx];
       const v = field.v[idx];
