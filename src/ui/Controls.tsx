@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import type { DatasetInfo } from "../api/contract";
+import { VISUALIZATION_OPTIONS, type VisualizationType } from "../map/config";
 
 type Props = {
   loading: boolean;
@@ -11,6 +12,8 @@ type Props = {
   onHeightMeters: (height: number) => void;
   resolution: { nx: number; ny: number };
   onResolution: (res: { nx: number; ny: number }) => void;
+  visualizationType: VisualizationType;
+  onVisualizationType: (type: VisualizationType) => void;
 };
 
 const PRESET_RESOLUTIONS = [
@@ -115,6 +118,25 @@ export function Controls(props: Props) {
 
       {hasDataset && (
         <div className="control-group">
+          <label className="control-label">Visualisierung</label>
+          <select
+            className="control-select"
+            value={props.visualizationType}
+            onChange={(e) =>
+              props.onVisualizationType(e.target.value as VisualizationType)
+            }
+          >
+            {VISUALIZATION_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {hasDataset && (
+        <div className="control-group">
           <label className="control-label">Auflösung</label>
           <select
             className="control-select"
@@ -139,7 +161,7 @@ export function Controls(props: Props) {
           </select>
           <div className="control-hint">
             {props.resolution.nx}×{props.resolution.ny} ={" "}
-            {props.resolution.nx * props.resolution.ny} Pfeile
+            {props.resolution.nx * props.resolution.ny}
           </div>
         </div>
       )}

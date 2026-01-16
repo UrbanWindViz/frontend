@@ -10,3 +10,13 @@ export const MAP_FIT_PADDING = {
   bottom: envNumber("VITE_MAP_FIT_PAD_BOTTOM", 20),
   left: envNumber("VITE_MAP_FIT_PAD_LEFT", 420),
 };
+
+export type VisualizationType = "arrows" | "heatmap";
+
+export const VISUALIZATION_OPTIONS: {
+  value: VisualizationType;
+  label: string;
+}[] = [
+  { value: "arrows", label: "Pfeile (Richtung + Stärke)" },
+  { value: "heatmap", label: "Heatmap (nur Intensität)" },
+];

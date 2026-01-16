@@ -2,26 +2,39 @@ import React, { useEffect, useMemo, useRef } from "react";
 import maplibregl, { Map } from "maplibre-gl";
 import { MapboxOverlay } from "@deck.gl/mapbox";
 import type { BBox, WindFieldGrid } from "../api/contract";
-import { MAP_FIT_PADDING } from "./config";
+import { MAP_FIT_PADDING, type VisualizationType } from "./config";
 import { buildWindArrowLayer } from "./WindLayer";
+import { buildWindHeatmapLayer } from "./HeatmapLayer";
 
 type Props = {
   datasetExtend: BBox | null;
   windField: WindFieldGrid | null;
+  visualizationType: VisualizationType;
   onViewportBbox: (bbox: BBox) => void;
 };
 
-export function MapView({ datasetExtend, windField, onViewportBbox }: Props) {
+export function MapView({
+  datasetExtend,
+  windField,
+  visualizationType,
+  onViewportBbox,
+}: Props) {
   const mapRef = useRef<Map | null>(null);
   const overlayRef = useRef<MapboxOverlay | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   const layers = useMemo(() => {
-    if (windField) {
-      return [buildWindArrowLayer(windField)];
+    if (!windField) return [];
+
+    switch (visualizationType) {
+      case "arrows":
+        return [buildWindArrowLayer(windField)];
+      case "heatmap":
+        return [buildWindHeatmapLayer(windField)];
+      default:
+        return [];
     }
-    return [];
-  }, [windField]);
+  }, [windField, visualizationType]);
 
   useEffect(() => {
     if (!containerRef.current) return;

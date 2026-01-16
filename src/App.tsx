@@ -7,6 +7,7 @@ import type { BBox, DatasetInfo, WindFieldGrid } from "./api/contract";
 import { fetchDatasets } from "./api/datasets";
 import { fetchWindFieldHttp } from "./api/wind";
 import "./index.css";
+import type { VisualizationType } from "./map/config";
 
 const HEALTH_INTERVAL_MS = 10_000;
 
@@ -26,6 +27,8 @@ export function App() {
   const [heightMeters, setHeightMeters] = useState<number | null>(null);
 
   const [resolution, setResolution] = useState({ nx: 100, ny: 100 });
+  const [visualizationType, setVisualizationType] =
+    useState<VisualizationType>("arrows");
 
   const [windField, setWindField] = useState<WindFieldGrid | null>(null);
 
@@ -142,6 +145,7 @@ export function App() {
         <MapView
           datasetExtend={datasetExtend}
           windField={windField}
+          visualizationType={visualizationType}
           onViewportBbox={onViewportBbox}
         />
 
@@ -158,6 +162,8 @@ export function App() {
           onHeightMeters={setHeightMeters}
           resolution={resolution}
           onResolution={setResolution}
+          visualizationType={visualizationType}
+          onVisualizationType={setVisualizationType}
         />
       </div>
 
