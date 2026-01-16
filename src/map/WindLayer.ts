@@ -16,7 +16,6 @@ export function buildWindArrowLayer(field: WindFieldGrid): Layer {
   const { minLon, minLat, maxLon, maxLat } = field.bbox;
 
   const data: ArrowDatum[] = [];
-  data.length = nx * ny;
 
   for (let j = 0; j < ny; j++) {
     for (let i = 0; i < nx; i++) {
@@ -34,14 +33,19 @@ export function buildWindArrowLayer(field: WindFieldGrid): Layer {
       const speed = Math.hypot(u, v);
       const headingDeg = headingDegFromUV(u, v);
 
-      data[idx] = { position: [lon, lat], speed, headingDeg };
+      data.push({ position: [lon, lat], speed, headingDeg });
     }
   }
 
   return new IconLayer<ArrowDatum>({
-    id: "wind-arrows",
+    id: `wind-arrows-${field.datasetId}-${field.heightMeters}`,
     data,
     pickable: true,
+
+    updateTriggers: {
+      getPosition: [field.nx, field.ny],
+      getColor: [field.speedMin, field.speedMax],
+    },
 
     iconAtlas: ARROW_SVG_DATA_URL,
     iconMapping: {

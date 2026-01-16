@@ -62,11 +62,3 @@ export type WindFieldGrid = {
   lon?: Float32Array;
   lat?: Float32Array;
 };
-
-export type WindFieldGridWithPoints = WindFieldGrid & {
-  xPoints?: Float32Array;
-  yPoints?: Float32Array;
-  uPoints?: Float32Array;
-  vPoints?: Float32Array;
-  wPoints?: Float32Array;
-};

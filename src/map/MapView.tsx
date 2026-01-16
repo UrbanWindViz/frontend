@@ -33,6 +33,7 @@ export function MapView({
   const onViewportBboxRef = useRef(onViewportBbox);
   const onMapMoveRef = useRef(onMapMove);
   const [mapInitialized, setMapInitialized] = useState(false);
+  const previousLayersRef = useRef<any[]>([]);
 
   useEffect(() => {
     onViewportBboxRef.current = onViewportBbox;
@@ -89,7 +90,13 @@ export function MapView({
       maxZoom: 19,
     });
 
-    const overlay = new MapboxOverlay({ layers: [] });
+    const overlay = new MapboxOverlay({
+      layers: [],
+      _typedArrayManagerProps: {
+        overAlloc: 1,
+        poolSize: 0,
+      },
+    });
     map.addControl(overlay as any);
 
     mapRef.current = map;
@@ -120,7 +127,15 @@ export function MapView({
     });
 
     return () => {
-      overlay.finalize();
+      if (overlayRef.current) {
+        previousLayersRef.current.forEach((layer) => {
+          if (layer && typeof layer.finalize === "function") {
+            layer.finalize();
+          }
+        });
+        previousLayersRef.current = [];
+        overlayRef.current.finalize();
+      }
       map.remove();
       setMapInitialized(false);
     };
@@ -141,7 +156,16 @@ export function MapView({
 
   useEffect(() => {
     if (overlayRef.current) {
+      previousLayersRef.current.forEach((layer) => {
+        if (layer && typeof layer.finalize === "function") {
+          try {
+            layer.finalize();
+          } catch (e) {}
+        }
+      });
+
       overlayRef.current.setProps({ layers });
+      previousLayersRef.current = layers;
     }
   }, [layers]);
 

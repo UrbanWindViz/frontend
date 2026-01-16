@@ -37,9 +37,14 @@ export function buildWindHeatmapLayer(field: WindFieldGrid): Layer {
   }
 
   return new ScatterplotLayer<HeatmapDatum>({
-    id: "wind-heatmap",
+    id: `wind-heatmap-${field.datasetId}-${field.heightMeters}`,
     data,
     pickable: true,
+
+    updateTriggers: {
+      getPosition: [field.nx, field.ny],
+      getFillColor: [field.speedMin, field.speedMax],
+    },
 
     getPosition: (d) => d.position,
     getFillColor: (d) => {
@@ -48,7 +53,7 @@ export function buildWindHeatmapLayer(field: WindFieldGrid): Layer {
     },
 
     radiusMinPixels: 6,
-    radiusMaxPixels: 6,
+    radiusMaxPixels: 50,
     getRadius: (d) => {
       const lonSpan = maxLon - minLon;
       const latSpan = maxLat - minLat;
