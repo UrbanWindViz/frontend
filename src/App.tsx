@@ -8,10 +8,13 @@ import { fetchDatasets } from "./api/datasets";
 import { fetchWindFieldHttp } from "./api/wind";
 import "./index.css";
 import type { VisualizationType } from "./map/config";
+import { useUrlState, buildPermalink } from "./util/urlStats";
 
 const HEALTH_INTERVAL_MS = 10_000;
 
 export function App() {
+  const urlState = useUrlState();
+
   const [backendUp, setBackendUp] = useState<boolean | null>(null);
   const [lastCheck, setLastCheck] = useState<Date | null>(null);
 
@@ -29,6 +32,13 @@ export function App() {
   const [resolution, setResolution] = useState({ nx: 100, ny: 100 });
   const [visualizationType, setVisualizationType] =
     useState<VisualizationType>("arrows");
+
+  const [mapCenter, setMapCenter] = useState<
+    { lon: number; lat: number } | undefined
+  >();
+  const [mapZoom, setMapZoom] = useState<number | undefined>();
+
+  const [permalinkCopied, setPermalinkCopied] = useState(false);
 
   const [windField, setWindField] = useState<WindFieldGrid | null>(null);
 
@@ -70,7 +80,17 @@ export function App() {
     fetchDatasets(ac.signal)
       .then((ds) => {
         setDatasets(ds);
-        ds.length === 1 && selectDataset(ds[0]);
+
+        if (urlState.datasetId) {
+          const ds_from_url = ds.find((d) => d.id === urlState.datasetId);
+          if (ds_from_url) {
+            selectDataset(ds_from_url);
+          } else if (ds.length === 1) {
+            selectDataset(ds[0]);
+          }
+        } else if (ds.length === 1) {
+          selectDataset(ds[0]);
+        }
       })
       .catch((e) => {
         if (e?.name !== "AbortError") console.error(e);
@@ -79,18 +99,32 @@ export function App() {
     return () => ac.abort();
   }, []);
 
+  useEffect(() => {
+    if (urlState.heightMeters !== undefined) {
+      setHeightMeters(urlState.heightMeters);
+    }
+    if (urlState.nx && urlState.ny) {
+      setResolution({ nx: urlState.nx, ny: urlState.ny });
+    }
+    if (urlState.visualizationType) {
+      setVisualizationType(urlState.visualizationType);
+    }
+  }, [urlState]);
+
   const selectDataset = useCallback(
     (ds: DatasetInfo) => {
       setDatasetId(ds.id);
       setDatasetExtend(ds.datasetExtent);
 
       setHeights(ds.availableHeightsMeters ?? []);
-      const defaultHeight = ds.availableHeightsMeters?.[0] ?? null;
+
+      const defaultHeight =
+        urlState.heightMeters ?? ds.availableHeightsMeters?.[0] ?? null;
       setHeightMeters(defaultHeight);
 
       setWindField(null);
     },
-    [setDatasetId]
+    [urlState.heightMeters]
   );
 
   const selectedDataset = useMemo(
@@ -139,6 +173,37 @@ export function App() {
     [selectedDataset]
   );
 
+  const onMapMove = useCallback(
+    (center: { lon: number; lat: number }, zoom: number) => {
+      setMapCenter(center);
+      setMapZoom(zoom);
+    },
+    []
+  );
+
+  const handleGeneratePermalink = useCallback(() => {
+    const link = buildPermalink({
+      datasetId,
+      heightMeters,
+      resolution,
+      visualizationType,
+      mapCenter,
+      mapZoom,
+    });
+
+    navigator.clipboard.writeText(link).then(() => {
+      setPermalinkCopied(true);
+      setTimeout(() => setPermalinkCopied(false), 3000);
+    });
+  }, [
+    datasetId,
+    heightMeters,
+    resolution,
+    visualizationType,
+    mapCenter,
+    mapZoom,
+  ]);
+
   return (
     <div className="app-container">
       <div className="app-main">
@@ -146,7 +211,14 @@ export function App() {
           datasetExtend={datasetExtend}
           windField={windField}
           visualizationType={visualizationType}
+          initialCenter={
+            urlState.lon && urlState.lat
+              ? { lon: urlState.lon, lat: urlState.lat }
+              : undefined
+          }
+          initialZoom={urlState.zoom}
           onViewportBbox={onViewportBbox}
+          onMapMove={onMapMove}
         />
 
         <Controls
@@ -164,6 +236,8 @@ export function App() {
           onResolution={setResolution}
           visualizationType={visualizationType}
           onVisualizationType={setVisualizationType}
+          onGeneratePermalink={handleGeneratePermalink}
+          permalinkCopied={permalinkCopied}
         />
       </div>
 

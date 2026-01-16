@@ -232,3 +232,24 @@ html, body, #root {
     opacity: 1;
   }
 }
+
+/* Ergänzung in index.css */
+.control-button {
+  width: 100%;
+  padding: 8px 12px;
+  background: #2196f3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.control-button:hover {
+  background: #1976d2;
+}
+
+.control-button:active {
+  background: #0d47a1;
+}

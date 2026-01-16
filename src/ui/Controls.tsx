@@ -14,6 +14,8 @@ type Props = {
   onResolution: (res: { nx: number; ny: number }) => void;
   visualizationType: VisualizationType;
   onVisualizationType: (type: VisualizationType) => void;
+  onGeneratePermalink: () => void;
+  permalinkCopied: boolean;
 };
 
 const PRESET_RESOLUTIONS = [
@@ -21,6 +23,7 @@ const PRESET_RESOLUTIONS = [
   { label: "Mittel (100×100)", nx: 100, ny: 100 },
   { label: "Hoch (200×200)", nx: 200, ny: 200 },
   { label: "Sehr hoch (400×400)", nx: 400, ny: 400 },
+  { label: "Don't use live (800×800)", nx: 800, ny: 800 },
 ];
 
 export function Controls(props: Props) {
@@ -163,6 +166,24 @@ export function Controls(props: Props) {
             {props.resolution.nx}×{props.resolution.ny} ={" "}
             {props.resolution.nx * props.resolution.ny}
           </div>
+        </div>
+      )}
+
+      {hasDataset && (
+        <div className="control-group">
+          <label className="control-label">Permalink</label>
+          <button
+            className="control-button"
+            onClick={props.onGeneratePermalink}
+            title="Link zur aktuellen Ansicht kopieren"
+          >
+            📋 Link kopieren
+          </button>
+          {props.permalinkCopied && (
+            <div className="control-hint" style={{ color: "#4caf50" }}>
+              ✓ Link kopiert!
+            </div>
+          )}
         </div>
       )}
     </div>
