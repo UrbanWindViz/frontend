@@ -21,6 +21,8 @@ export async function fetchWindFieldHttp(
   url.searchParams.set("maxLat", String(q.bbox.maxLat));
   url.searchParams.set("nx", String(q.resolution.nx));
   url.searchParams.set("ny", String(q.resolution.ny));
+  url.searchParams.set("wdRef", String(q.wdRef));
+  url.searchParams.set("wsRef", String(q.wsRef));
 
   const res = await fetch(url.toString(), { signal });
   if (!res.ok) {

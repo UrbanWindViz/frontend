@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { Controls } from "./ui/Controls";
 import { MapView } from "./map/MapView";
 import { Footer } from "./ui/Footer";
+import { TimeControl } from "./ui/Time";
 import { checkHealth } from "./api/health";
 import type { BBox, DatasetInfo, WindFieldGrid } from "./api/contract";
 import { fetchDatasets } from "./api/datasets";
@@ -9,6 +10,13 @@ import { fetchWindFieldHttp } from "./api/wind";
 import "./index.css";
 import type { VisualizationType } from "./map/config";
 import { useUrlState, buildPermalink } from "./util/urlStats";
+import { useAnimation } from "./util/animation";
+import {
+  fetchWeatherTimesteps,
+  interpolateTimesteps,
+  getDefaultDate,
+  type WeatherTimestep,
+} from "./api/weather";
 
 const HEALTH_INTERVAL_MS = 10_000;
 
@@ -19,6 +27,7 @@ export function App() {
   const [lastCheck, setLastCheck] = useState<Date | null>(null);
 
   const [loading, setLoading] = useState(false);
+  const [queryInProgress, setQueryInProgress] = useState(false);
 
   const [datasets, setDatasets] = useState<DatasetInfo[]>([]);
   const [datasetId, setDatasetId] = useState<string | null>(null);
@@ -41,6 +50,32 @@ export function App() {
   const [permalinkCopied, setPermalinkCopied] = useState(false);
 
   const [windField, setWindField] = useState<WindFieldGrid | null>(null);
+
+  const [hourlyWeatherData, setHourlyWeatherData] = useState<WeatherTimestep[]>(
+    []
+  );
+  const [timestepInterval, setTimestepInterval] = useState(60);
+  const [weatherLoading, setWeatherLoading] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [currentDate, setCurrentDate] = useState(getDefaultDate());
+  const [timeControlMinimized, setTimeControlMinimized] = useState(false);
+
+  const weatherTimesteps = useMemo(() => {
+    return interpolateTimesteps(hourlyWeatherData, timestepInterval);
+  }, [hourlyWeatherData, timestepInterval]);
+
+  const { currentIndex, setCurrentIndex } = useAnimation(
+    weatherTimesteps.length,
+    playbackSpeed,
+    playing && !queryInProgress
+  );
+
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [timestepInterval, setCurrentIndex]);
+
+  const currentWeather = weatherTimesteps[currentIndex];
 
   useEffect(() => {
     let cancelled = false;
@@ -111,6 +146,29 @@ export function App() {
     }
   }, [urlState]);
 
+  useEffect(() => {
+    if (!mapCenter) {
+      setHourlyWeatherData([]);
+      return;
+    }
+
+    setWeatherLoading(true);
+    setPlaying(false);
+
+    fetchWeatherTimesteps(mapCenter.lat, mapCenter.lon, currentDate)
+      .then((timesteps) => {
+        setHourlyWeatherData(timesteps);
+        setCurrentIndex(0);
+      })
+      .catch((err) => {
+        console.error("Failed to load weather data:", err);
+        setHourlyWeatherData([]);
+      })
+      .finally(() => {
+        setWeatherLoading(false);
+      });
+  }, [mapCenter, currentDate]);
+
   const selectDataset = useCallback(
     (ds: DatasetInfo) => {
       setDatasetId(ds.id);
@@ -134,9 +192,13 @@ export function App() {
 
   const canQuery = useMemo(() => {
     return (
-      !!bbox && !!selectedDataset && heightMeters !== null && heights.length > 0
+      !!bbox &&
+      !!selectedDataset &&
+      heightMeters !== null &&
+      heights.length > 0 &&
+      !!currentWeather
     );
-  }, [bbox, selectedDataset, heightMeters, heights.length]);
+  }, [bbox, selectedDataset, heightMeters, heights.length, currentWeather]);
 
   const query = useMemo(() => {
     if (!canQuery) return null;
@@ -146,21 +208,34 @@ export function App() {
       heightMeters: heightMeters!,
       bbox: bbox!,
       resolution,
+      wsRef: currentWeather.wsRef,
+      wdRef: currentWeather.wdRef,
     };
-  }, [canQuery, selectedDataset, heightMeters, bbox, resolution]);
+  }, [
+    canQuery,
+    selectedDataset,
+    heightMeters,
+    bbox,
+    resolution,
+    currentWeather,
+  ]);
 
   useEffect(() => {
     if (!query) return;
 
     const ac = new AbortController();
     setLoading(true);
+    setQueryInProgress(true);
 
     fetchWindFieldHttp(query, ac.signal)
       .then(setWindField)
       .catch((err) => {
         if (err?.name !== "AbortError") console.error(err);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        setLoading(false);
+        setQueryInProgress(false);
+      });
 
     return () => ac.abort();
   }, [query]);
@@ -222,7 +297,7 @@ export function App() {
         />
 
         <Controls
-          loading={loading}
+          loading={loading || weatherLoading}
           datasets={datasets}
           datasetId={datasetId}
           onDatasetId={(id) => {
@@ -238,6 +313,25 @@ export function App() {
           onVisualizationType={setVisualizationType}
           onGeneratePermalink={handleGeneratePermalink}
           permalinkCopied={permalinkCopied}
+        />
+
+        <TimeControl
+          timesteps={weatherTimesteps}
+          currentIndex={currentIndex}
+          onIndexChange={setCurrentIndex}
+          playing={playing}
+          onPlayPause={() => setPlaying(!playing)}
+          playbackSpeed={playbackSpeed}
+          onSpeedChange={setPlaybackSpeed}
+          loading={weatherLoading}
+          currentDate={currentDate}
+          onDateChange={setCurrentDate}
+          isMinimized={timeControlMinimized}
+          onToggleMinimize={() =>
+            setTimeControlMinimized(!timeControlMinimized)
+          }
+          timestepInterval={timestepInterval}
+          onTimestepIntervalChange={setTimestepInterval}
         />
       </div>
 
