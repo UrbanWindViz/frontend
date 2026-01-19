@@ -1,5 +1,3 @@
-import React from "react";
-
 type Props = {
   backendUp: boolean | null;
   lastCheck: Date | null;

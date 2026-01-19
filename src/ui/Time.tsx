@@ -1,4 +1,3 @@
-import React from "react";
 import type { WeatherTimestep } from "../api/weather";
 
 type Props = {

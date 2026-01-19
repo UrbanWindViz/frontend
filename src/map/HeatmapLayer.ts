@@ -37,7 +37,7 @@ export function buildWindHeatmapLayer(field: WindFieldGrid): Layer {
   }
 
   return new ScatterplotLayer<HeatmapDatum>({
-    id: `wind-heatmap-${field.datasetId}-${field.heightMeters}`,
+    id: `wind-heatmap-${field.heightMeters}`,
     data,
     pickable: true,
 
@@ -54,7 +54,7 @@ export function buildWindHeatmapLayer(field: WindFieldGrid): Layer {
 
     radiusMinPixels: 6,
     radiusMaxPixels: 50,
-    getRadius: (d) => {
+    getRadius: () => {
       const lonSpan = maxLon - minLon;
       const latSpan = maxLat - minLat;
       const avgSpan = (lonSpan + latSpan) / 2;

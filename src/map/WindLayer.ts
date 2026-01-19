@@ -38,7 +38,7 @@ export function buildWindArrowLayer(field: WindFieldGrid): Layer {
   }
 
   return new IconLayer<ArrowDatum>({
-    id: `wind-arrows-${field.datasetId}-${field.heightMeters}`,
+    id: `wind-arrows-${field.heightMeters}`,
     data,
     pickable: true,
 

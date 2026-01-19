@@ -43,7 +43,6 @@ export async function fetchWindFieldHttp(
   }
 
   return {
-    datasetId: data.datasetId,
     heightMeters: data.heightMeters,
     bbox: data.bbox,
     nx: data.nx,
