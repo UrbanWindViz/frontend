@@ -7,6 +7,7 @@ import {
   type WeatherTimestep,
 } from "../api/weather";
 import { useAnimation } from "../util/animation";
+import { useUrlState } from "../util/urlStats";
 import type { WindQuery_Controls } from "../api/contract";
 
 type Props = {
@@ -17,23 +18,15 @@ type Props = {
   mapCenter?: { lon: number; lat: number };
   queryInProgress: boolean;
   onQueryControls: (controls: WindQuery_Controls | null) => void;
-  initialHeightMeters?: number;
 };
 
-const PRESET_RESOLUTIONS = [
-  { label: "Niedrig (50×50)", nx: 50, ny: 50 },
-  { label: "Mittel (100×100)", nx: 100, ny: 100 },
-  { label: "Hoch (200×200)", nx: 200, ny: 200 },
-  { label: "Sehr hoch (400×400)", nx: 400, ny: 400 },
-  { label: "Don't use live (800×800)", nx: 800, ny: 800 },
-];
-
 export function Controls(props: Props) {
+  const urlState = useUrlState();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [timeControlMinimized, setTimeControlMinimized] = useState(false);
 
   const [heightMeters, setHeightMeters] = useState<number | null>(
-    props.initialHeightMeters ?? null,
+    urlState.heightMeters ?? null,
   );
 
   const [hourlyWeatherData, setHourlyWeatherData] = useState<WeatherTimestep[]>(

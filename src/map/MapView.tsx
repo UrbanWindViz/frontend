@@ -5,12 +5,10 @@ import type { WindFieldGrid, WindQuery_Map } from "../api/contract";
 import { buildWindArrowLayer } from "./WindLayer";
 import { buildWindHeatmapLayer } from "./HeatmapLayer";
 import { VISUALIZATION_OPTIONS, type VisualizationType } from "./config";
+import { useUrlState } from "../util/urlStats";
 
 type Props = {
   windField: WindFieldGrid | null;
-  initialCenter?: { lon: number; lat: number };
-  initialZoom?: number;
-  initialResolution?: { nx: number; ny: number };
   onMapQuery: (query: WindQuery_Map) => void;
   onMapMove?: (center: { lon: number; lat: number }, zoom: number) => void;
 };
@@ -23,18 +21,15 @@ const PRESET_RESOLUTIONS = [
   { label: "Don't use live (800×800)", nx: 800, ny: 800 },
 ];
 
-export function MapView({
-  windField,
-  initialCenter,
-  initialZoom,
-  initialResolution,
-  onMapQuery,
-  onMapMove,
-}: Props) {
-  const [visualizationType, setVisualizationType] =
-    useState<VisualizationType>("arrows");
+export function MapView({ windField, onMapQuery, onMapMove }: Props) {
+  const urlState = useUrlState();
+  const [visualizationType, setVisualizationType] = useState<VisualizationType>(
+    urlState.visualizationType ?? "arrows",
+  );
   const [resolution, setResolution] = useState(
-    initialResolution ?? { nx: 100, ny: 100 },
+    urlState.nx && urlState.ny
+      ? { nx: urlState.nx, ny: urlState.ny }
+      : { nx: 100, ny: 100 },
   );
   const [showSettings, setShowSettings] = useState(false);
 
@@ -98,10 +93,9 @@ export function MapView({
           },
         ],
       } as any,
-      center: initialCenter
-        ? [initialCenter.lon, initialCenter.lat]
-        : undefined,
-      zoom: initialZoom,
+      center:
+        urlState.lon && urlState.lat ? [urlState.lon, urlState.lat] : undefined,
+      zoom: urlState.zoom,
       maxZoom: 19,
     });
 

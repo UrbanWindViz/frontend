@@ -146,17 +146,6 @@ export function App() {
       <div className="app-main">
         <MapView
           windField={windField}
-          initialCenter={
-            urlState.lon && urlState.lat
-              ? { lon: urlState.lon, lat: urlState.lat }
-              : undefined
-          }
-          initialZoom={urlState.zoom}
-          initialResolution={
-            urlState.nx && urlState.ny
-              ? { nx: urlState.nx, ny: urlState.ny }
-              : undefined
-          }
           onMapQuery={setMapQuery}
           onMapMove={onMapMove}
         />
@@ -169,7 +158,6 @@ export function App() {
           mapCenter={mapCenter}
           queryInProgress={queryInProgress}
           onQueryControls={setQueryControls}
-          initialHeightMeters={urlState.heightMeters}
         />
       </div>
 
