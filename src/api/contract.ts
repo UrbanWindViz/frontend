@@ -37,7 +37,6 @@ export type BackendWindResponse = {
 };
 
 export type WindQuery = {
-  datasetId: string;
   heightMeters: number;
   bbox: BBox;
   resolution: { nx: number; ny: number };
@@ -46,7 +45,6 @@ export type WindQuery = {
 };
 
 export type WindFieldGrid = {
-  datasetId: string;
   heightMeters: number;
 
   bbox: BBox;

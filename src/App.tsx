@@ -29,10 +29,6 @@ export function App() {
   const [loading, setLoading] = useState(false);
   const [queryInProgress, setQueryInProgress] = useState(false);
 
-  const [datasets, setDatasets] = useState<DatasetInfo[]>([]);
-  const [datasetId, setDatasetId] = useState<string | null>(null);
-
-  const [datasetExtend, setDatasetExtend] = useState<BBox | null>(null);
   const [bbox, setBbox] = useState<BBox | null>(null);
 
   const [heights, setHeights] = useState<number[]>([]);
@@ -114,17 +110,11 @@ export function App() {
 
     fetchDatasets(ac.signal)
       .then((ds) => {
-        setDatasets(ds);
+        const allHeights = ds.map((c) => c.availableHeightsMeters).flat();
+        setHeights(allHeights);
 
-        if (urlState.datasetId) {
-          const ds_from_url = ds.find((d) => d.id === urlState.datasetId);
-          if (ds_from_url) {
-            selectDataset(ds_from_url);
-          } else if (ds.length === 1) {
-            selectDataset(ds[0]);
-          }
-        } else if (ds.length === 1) {
-          selectDataset(ds[0]);
+        if (heightMeters === null && allHeights.length > 0) {
+          setHeightMeters(allHeights[0]);
         }
       })
       .catch((e) => {
@@ -171,9 +161,6 @@ export function App() {
 
   const selectDataset = useCallback(
     (ds: DatasetInfo) => {
-      setDatasetId(ds.id);
-      setDatasetExtend(ds.datasetExtent);
-
       setHeights(ds.availableHeightsMeters ?? []);
 
       const defaultHeight =
@@ -185,40 +172,23 @@ export function App() {
     [urlState.heightMeters]
   );
 
-  const selectedDataset = useMemo(
-    () => (datasetId ? datasets.find((d) => d.id === datasetId) ?? null : null),
-    [datasets, datasetId]
-  );
-
   const canQuery = useMemo(() => {
     return (
-      !!bbox &&
-      !!selectedDataset &&
-      heightMeters !== null &&
-      heights.length > 0 &&
-      !!currentWeather
+      !!bbox && heightMeters !== null && heights.length > 0 && !!currentWeather
     );
-  }, [bbox, selectedDataset, heightMeters, heights.length, currentWeather]);
+  }, [bbox, heightMeters, heights.length, currentWeather]);
 
   const query = useMemo(() => {
     if (!canQuery) return null;
 
     return {
-      datasetId: selectedDataset!.id,
       heightMeters: heightMeters!,
       bbox: bbox!,
       resolution,
       wsRef: currentWeather.wsRef,
       wdRef: currentWeather.wdRef,
     };
-  }, [
-    canQuery,
-    selectedDataset,
-    heightMeters,
-    bbox,
-    resolution,
-    currentWeather,
-  ]);
+  }, [canQuery, heightMeters, bbox, resolution, currentWeather]);
 
   useEffect(() => {
     if (!query) return;
@@ -240,14 +210,6 @@ export function App() {
     return () => ac.abort();
   }, [query]);
 
-  const onViewportBbox = useCallback(
-    (b: BBox) => {
-      if (!selectedDataset) return;
-      setBbox(b);
-    },
-    [selectedDataset]
-  );
-
   const onMapMove = useCallback(
     (center: { lon: number; lat: number }, zoom: number) => {
       setMapCenter(center);
@@ -258,7 +220,6 @@ export function App() {
 
   const handleGeneratePermalink = useCallback(() => {
     const link = buildPermalink({
-      datasetId,
       heightMeters,
       resolution,
       visualizationType,
@@ -270,20 +231,12 @@ export function App() {
       setPermalinkCopied(true);
       setTimeout(() => setPermalinkCopied(false), 3000);
     });
-  }, [
-    datasetId,
-    heightMeters,
-    resolution,
-    visualizationType,
-    mapCenter,
-    mapZoom,
-  ]);
+  }, [heightMeters, resolution, visualizationType, mapCenter, mapZoom]);
 
   return (
     <div className="app-container">
       <div className="app-main">
         <MapView
-          datasetExtend={datasetExtend}
           windField={windField}
           visualizationType={visualizationType}
           initialCenter={
@@ -292,18 +245,12 @@ export function App() {
               : undefined
           }
           initialZoom={urlState.zoom}
-          onViewportBbox={onViewportBbox}
+          onViewportBbox={setBbox}
           onMapMove={onMapMove}
         />
 
         <Controls
           loading={loading || weatherLoading}
-          datasets={datasets}
-          datasetId={datasetId}
-          onDatasetId={(id) => {
-            const ds = datasets.find((d) => d.id === id);
-            if (ds) selectDataset(ds);
-          }}
           heights={heights}
           heightMeters={heightMeters}
           onHeightMeters={setHeightMeters}

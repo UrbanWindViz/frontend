@@ -47,7 +47,6 @@ export function parseUrlState(): UrlState {
 }
 
 export function buildPermalink(state: {
-  datasetId: string | null;
   heightMeters: number | null;
   resolution: { nx: number; ny: number };
   visualizationType: VisualizationType;
@@ -56,7 +55,6 @@ export function buildPermalink(state: {
 }): string {
   const params = new URLSearchParams();
 
-  if (state.datasetId) params.set("dataset", state.datasetId);
   if (state.heightMeters !== null)
     params.set("height", String(state.heightMeters));
   params.set("nx", String(state.resolution.nx));

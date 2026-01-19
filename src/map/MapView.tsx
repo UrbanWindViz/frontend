@@ -2,13 +2,11 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import maplibregl, { Map } from "maplibre-gl";
 import { MapboxOverlay } from "@deck.gl/mapbox";
 import type { BBox, WindFieldGrid } from "../api/contract";
-import { MAP_FIT_PADDING } from "./config";
 import { buildWindArrowLayer } from "./WindLayer";
 import { buildWindHeatmapLayer } from "./HeatmapLayer";
 import type { VisualizationType } from "./config";
 
 type Props = {
-  datasetExtend: BBox | null;
   windField: WindFieldGrid | null;
   visualizationType: VisualizationType;
   initialCenter?: { lon: number; lat: number };
@@ -18,7 +16,6 @@ type Props = {
 };
 
 export function MapView({
-  datasetExtend,
   windField,
   visualizationType,
   initialCenter,
@@ -29,10 +26,8 @@ export function MapView({
   const mapRef = useRef<Map | null>(null);
   const overlayRef = useRef<MapboxOverlay | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const initialCenterRef = useRef(initialCenter);
   const onViewportBboxRef = useRef(onViewportBbox);
   const onMapMoveRef = useRef(onMapMove);
-  const [mapInitialized, setMapInitialized] = useState(false);
   const previousLayersRef = useRef<any[]>([]);
 
   useEffect(() => {
@@ -121,10 +116,7 @@ export function MapView({
     map.on("moveend", emitBbox);
     map.on("zoomend", emitBbox);
 
-    map.on("load", () => {
-      setMapInitialized(true);
-      emitBbox();
-    });
+    map.on("load", emitBbox);
 
     return () => {
       if (overlayRef.current) {
@@ -137,22 +129,8 @@ export function MapView({
         overlayRef.current.finalize();
       }
       map.remove();
-      setMapInitialized(false);
     };
   }, []);
-
-  useEffect(() => {
-    if (!datasetExtend || !mapRef.current || !mapInitialized) return;
-    if (initialCenterRef.current) return;
-
-    mapRef.current.fitBounds(
-      [
-        [datasetExtend.minLon, datasetExtend.minLat],
-        [datasetExtend.maxLon, datasetExtend.maxLat],
-      ],
-      { padding: MAP_FIT_PADDING, duration: 0 }
-    );
-  }, [datasetExtend, mapInitialized]);
 
   useEffect(() => {
     if (overlayRef.current) {

@@ -1,12 +1,8 @@
 import React, { useState } from "react";
-import type { DatasetInfo } from "../api/contract";
 import { VISUALIZATION_OPTIONS, type VisualizationType } from "../map/config";
 
 type Props = {
   loading: boolean;
-  datasets: DatasetInfo[];
-  datasetId: string | null;
-  onDatasetId: (id: string) => void;
   heights: number[];
   heightMeters: number | null;
   onHeightMeters: (height: number) => void;
@@ -30,7 +26,6 @@ export function Controls(props: Props) {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const currentResKey = `${props.resolution.nx}×${props.resolution.ny}`;
-  const hasDataset = props.datasetId !== null;
 
   if (isCollapsed) {
     return (
@@ -73,119 +68,86 @@ export function Controls(props: Props) {
       </div>
 
       <div className="control-group">
-        <label className="control-label">Dataset</label>
+        <label className="control-label">Höhe</label>
         <select
           className="control-select"
-          value={props.datasetId ?? ""}
-          onChange={(e) => props.onDatasetId(e.target.value)}
-          disabled={props.datasets.length === 0}
+          value={props.heightMeters ?? ""}
+          onChange={(e) => props.onHeightMeters(Number(e.target.value))}
+          disabled={props.heights.length === 0}
         >
-          {props.datasets.length === 0 ? (
-            <option value="">(lädt…)</option>
+          {props.heights.length === 0 ? (
+            <option value="">(keine Höhen verfügbar)</option>
           ) : (
-            <>
-              <option value="" disabled>
-                (bitte auswählen)
+            props.heights.map((h) => (
+              <option key={h} value={h}>
+                {h} m
               </option>
-              {props.datasets.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name}
-                </option>
-              ))}
-            </>
+            ))
           )}
         </select>
       </div>
 
-      {hasDataset && (
-        <div className="control-group">
-          <label className="control-label">Höhe</label>
-          <select
-            className="control-select"
-            value={props.heightMeters ?? ""}
-            onChange={(e) => props.onHeightMeters(Number(e.target.value))}
-            disabled={props.heights.length === 0}
-          >
-            {props.heights.length === 0 ? (
-              <option value="">(keine Höhen verfügbar)</option>
-            ) : (
-              props.heights.map((h) => (
-                <option key={h} value={h}>
-                  {h} m
-                </option>
-              ))
-            )}
-          </select>
-        </div>
-      )}
+      <div className="control-group">
+        <label className="control-label">Visualisierung</label>
+        <select
+          className="control-select"
+          value={props.visualizationType}
+          onChange={(e) =>
+            props.onVisualizationType(e.target.value as VisualizationType)
+          }
+        >
+          {VISUALIZATION_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+      </div>
 
-      {hasDataset && (
-        <div className="control-group">
-          <label className="control-label">Visualisierung</label>
-          <select
-            className="control-select"
-            value={props.visualizationType}
-            onChange={(e) =>
-              props.onVisualizationType(e.target.value as VisualizationType)
+      <div className="control-group">
+        <label className="control-label">Auflösung</label>
+        <select
+          className="control-select"
+          value={currentResKey}
+          onChange={(e) => {
+            const preset = PRESET_RESOLUTIONS.find(
+              (p) => `${p.nx}×${p.ny}` === e.target.value
+            );
+            if (preset) {
+              props.onResolution({ nx: preset.nx, ny: preset.ny });
             }
-          >
-            {VISUALIZATION_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+          }}
+        >
+          {PRESET_RESOLUTIONS.map((preset) => (
+            <option
+              key={`${preset.nx}×${preset.ny}`}
+              value={`${preset.nx}×${preset.ny}`}
+            >
+              {preset.label}
+            </option>
+          ))}
+        </select>
+        <div className="control-hint">
+          {props.resolution.nx}×{props.resolution.ny} ={" "}
+          {props.resolution.nx * props.resolution.ny}
         </div>
-      )}
+      </div>
 
-      {hasDataset && (
-        <div className="control-group">
-          <label className="control-label">Auflösung</label>
-          <select
-            className="control-select"
-            value={currentResKey}
-            onChange={(e) => {
-              const preset = PRESET_RESOLUTIONS.find(
-                (p) => `${p.nx}×${p.ny}` === e.target.value
-              );
-              if (preset) {
-                props.onResolution({ nx: preset.nx, ny: preset.ny });
-              }
-            }}
-          >
-            {PRESET_RESOLUTIONS.map((preset) => (
-              <option
-                key={`${preset.nx}×${preset.ny}`}
-                value={`${preset.nx}×${preset.ny}`}
-              >
-                {preset.label}
-              </option>
-            ))}
-          </select>
-          <div className="control-hint">
-            {props.resolution.nx}×{props.resolution.ny} ={" "}
-            {props.resolution.nx * props.resolution.ny}
+      <div className="control-group">
+        <label className="control-label">Permalink</label>
+        <button
+          className="control-button"
+          onClick={props.onGeneratePermalink}
+          title="Link zur aktuellen Ansicht kopieren"
+        >
+          📋 Link kopieren
+        </button>
+        {props.permalinkCopied && (
+          <div className="control-hint" style={{ color: "#4caf50" }}>
+            ✓ Link kopiert!
           </div>
-        </div>
-      )}
-
-      {hasDataset && (
-        <div className="control-group">
-          <label className="control-label">Permalink</label>
-          <button
-            className="control-button"
-            onClick={props.onGeneratePermalink}
-            title="Link zur aktuellen Ansicht kopieren"
-          >
-            📋 Link kopieren
-          </button>
-          {props.permalinkCopied && (
-            <div className="control-hint" style={{ color: "#4caf50" }}>
-              ✓ Link kopiert!
-            </div>
-          )}
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

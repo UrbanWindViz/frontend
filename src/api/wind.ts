@@ -13,7 +13,6 @@ export async function fetchWindFieldHttp(
   signal?: AbortSignal
 ): Promise<WindFieldGrid> {
   const url = new URL(`${API_BASE}/api/wind`);
-  url.searchParams.set("datasetId", q.datasetId);
   url.searchParams.set("heightMeters", String(q.heightMeters));
   url.searchParams.set("minLon", String(q.bbox.minLon));
   url.searchParams.set("minLat", String(q.bbox.minLat));
