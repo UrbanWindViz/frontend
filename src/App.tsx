@@ -1,15 +1,19 @@
-import { useCallback, useEffect, useMemo, useState, useRef } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Controls } from "./ui/Controls";
 import { MapView } from "./map/MapView";
 import { Footer } from "./ui/Footer";
 import { checkHealth } from "./api/health";
-import type { BBox, DatasetInfo, WindFieldGrid } from "./api/contract";
+import type {
+  WindFieldGrid,
+  WindQuery_Controls,
+  WindQuery_Map,
+  WindQuery,
+} from "./api/contract";
 import { fetchDatasets } from "./api/datasets";
 import { fetchWindFieldHttp } from "./api/wind";
 import "./index.css";
 import type { VisualizationType } from "./map/config";
 import { useUrlState, buildPermalink } from "./util/urlStats";
-import type { WeatherTimestep } from "./api/weather";
 
 const HEALTH_INTERVAL_MS = 10_000;
 
@@ -22,12 +26,9 @@ export function App() {
   const [loading, setLoading] = useState(false);
   const [queryInProgress, setQueryInProgress] = useState(false);
 
-  const [bbox, setBbox] = useState<BBox | null>(null);
+  const [mapQuery, setMapQuery] = useState<WindQuery_Map | null>(null);
 
   const [heights, setHeights] = useState<number[]>([]);
-  const [heightMeters, setHeightMeters] = useState<number | null>(null);
-
-  const [resolution, setResolution] = useState({ nx: 100, ny: 100 });
   const [visualizationType, setVisualizationType] =
     useState<VisualizationType>("arrows");
 
@@ -40,9 +41,9 @@ export function App() {
 
   const [windField, setWindField] = useState<WindFieldGrid | null>(null);
 
-  const [currentWeather, setCurrentWeather] = useState<
-    WeatherTimestep | undefined
-  >();
+  const [queryControls, setQueryControls] = useState<WindQuery_Controls | null>(
+    null,
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -83,10 +84,6 @@ export function App() {
       .then((ds) => {
         const allHeights = ds.map((c) => c.availableHeightsMeters).flat();
         setHeights(allHeights);
-
-        if (heightMeters === null && allHeights.length > 0) {
-          setHeightMeters(allHeights[0]);
-        }
       })
       .catch((e) => {
         if (e?.name !== "AbortError") console.error(e);
@@ -96,34 +93,19 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    if (urlState.heightMeters !== undefined) {
-      setHeightMeters(urlState.heightMeters);
-    }
-    if (urlState.nx && urlState.ny) {
-      setResolution({ nx: urlState.nx, ny: urlState.ny });
-    }
     if (urlState.visualizationType) {
       setVisualizationType(urlState.visualizationType);
     }
   }, [urlState]);
 
-  const canQuery = useMemo(() => {
-    return (
-      !!bbox && heightMeters !== null && heights.length > 0 && !!currentWeather
-    );
-  }, [bbox, heightMeters, heights.length, currentWeather]);
-
-  const query = useMemo(() => {
-    if (!canQuery) return null;
+  const query = useMemo<WindQuery | null>(() => {
+    if (!mapQuery || !queryControls) return null;
 
     return {
-      heightMeters: heightMeters!,
-      bbox: bbox!,
-      resolution,
-      wsRef: currentWeather!.wsRef,
-      wdRef: currentWeather!.wdRef,
+      ...queryControls,
+      ...mapQuery,
     };
-  }, [canQuery, heightMeters, bbox, resolution, currentWeather]);
+  }, [mapQuery, queryControls]);
 
   useEffect(() => {
     if (!query) return;
@@ -150,13 +132,15 @@ export function App() {
       setMapCenter(center);
       setMapZoom(zoom);
     },
-    []
+    [],
   );
 
   const handleGeneratePermalink = useCallback(() => {
     const link = buildPermalink({
-      heightMeters,
-      resolution,
+      heightMeters: queryControls?.heightMeters ?? null,
+      resolution: queryControls
+        ? { nx: queryControls.resolution.nx, ny: queryControls.resolution.ny }
+        : { nx: 100, ny: 100 },
       visualizationType,
       mapCenter,
       mapZoom,
@@ -166,7 +150,7 @@ export function App() {
       setPermalinkCopied(true);
       setTimeout(() => setPermalinkCopied(false), 3000);
     });
-  }, [heightMeters, resolution, visualizationType, mapCenter, mapZoom]);
+  }, [queryControls, visualizationType, mapCenter, mapZoom]);
 
   return (
     <div className="app-container">
@@ -180,24 +164,26 @@ export function App() {
               : undefined
           }
           initialZoom={urlState.zoom}
-          onViewportBbox={setBbox}
+          onMapQuery={setMapQuery}
           onMapMove={onMapMove}
         />
 
         <Controls
           loading={loading}
           heights={heights}
-          heightMeters={heightMeters}
-          onHeightMeters={setHeightMeters}
-          resolution={resolution}
-          onResolution={setResolution}
           visualizationType={visualizationType}
           onVisualizationType={setVisualizationType}
           onGeneratePermalink={handleGeneratePermalink}
           permalinkCopied={permalinkCopied}
           mapCenter={mapCenter}
           queryInProgress={queryInProgress}
-          onCurrentWeather={setCurrentWeather}
+          onQueryControls={setQueryControls}
+          initialHeightMeters={urlState.heightMeters}
+          initialResolution={
+            urlState.nx && urlState.ny
+              ? { nx: urlState.nx, ny: urlState.ny }
+              : undefined
+          }
         />
       </div>
 

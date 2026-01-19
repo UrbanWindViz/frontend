@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import maplibregl, { Map } from "maplibre-gl";
 import { MapboxOverlay } from "@deck.gl/mapbox";
-import type { BBox, WindFieldGrid } from "../api/contract";
+import type { WindFieldGrid, WindQuery_Map } from "../api/contract";
 import { buildWindArrowLayer } from "./WindLayer";
 import { buildWindHeatmapLayer } from "./HeatmapLayer";
 import type { VisualizationType } from "./config";
@@ -11,7 +11,7 @@ type Props = {
   visualizationType: VisualizationType;
   initialCenter?: { lon: number; lat: number };
   initialZoom?: number;
-  onViewportBbox: (bbox: BBox) => void;
+  onMapQuery: (query: WindQuery_Map) => void;
   onMapMove?: (center: { lon: number; lat: number }, zoom: number) => void;
 };
 
@@ -20,19 +20,19 @@ export function MapView({
   visualizationType,
   initialCenter,
   initialZoom,
-  onViewportBbox,
+  onMapQuery,
   onMapMove,
 }: Props) {
   const mapRef = useRef<Map | null>(null);
   const overlayRef = useRef<MapboxOverlay | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const onViewportBboxRef = useRef(onViewportBbox);
+  const onMapQueryRef = useRef(onMapQuery);
   const onMapMoveRef = useRef(onMapMove);
   const previousLayersRef = useRef<any[]>([]);
 
   useEffect(() => {
-    onViewportBboxRef.current = onViewportBbox;
-  }, [onViewportBbox]);
+    onMapQueryRef.current = onMapQuery;
+  }, [onMapQuery]);
 
   useEffect(() => {
     onMapMoveRef.current = onMapMove;
@@ -99,11 +99,13 @@ export function MapView({
 
     const emitBbox = () => {
       const b = map.getBounds();
-      onViewportBboxRef.current({
-        minLon: b.getWest(),
-        minLat: b.getSouth(),
-        maxLon: b.getEast(),
-        maxLat: b.getNorth(),
+      onMapQueryRef.current({
+        bbox: {
+          minLon: b.getWest(),
+          minLat: b.getSouth(),
+          maxLon: b.getEast(),
+          maxLat: b.getNorth(),
+        },
       });
 
       if (onMapMoveRef.current) {

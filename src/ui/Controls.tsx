@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { VISUALIZATION_OPTIONS, type VisualizationType } from "../map/config";
 import { TimeControl } from "./Time";
 import {
@@ -8,21 +8,20 @@ import {
   type WeatherTimestep,
 } from "../api/weather";
 import { useAnimation } from "../util/animation";
+import type { WindQuery_Controls } from "../api/contract";
 
 type Props = {
   loading: boolean;
   heights: number[];
-  heightMeters: number | null;
-  onHeightMeters: (height: number) => void;
-  resolution: { nx: number; ny: number };
-  onResolution: (res: { nx: number; ny: number }) => void;
   visualizationType: VisualizationType;
   onVisualizationType: (type: VisualizationType) => void;
   onGeneratePermalink: () => void;
   permalinkCopied: boolean;
   mapCenter?: { lon: number; lat: number };
   queryInProgress: boolean;
-  onCurrentWeather: (weather: WeatherTimestep | undefined) => void;
+  onQueryControls: (controls: WindQuery_Controls | null) => void;
+  initialHeightMeters?: number;
+  initialResolution?: { nx: number; ny: number };
 };
 
 const PRESET_RESOLUTIONS = [
@@ -36,6 +35,13 @@ const PRESET_RESOLUTIONS = [
 export function Controls(props: Props) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [timeControlMinimized, setTimeControlMinimized] = useState(false);
+
+  const [heightMeters, setHeightMeters] = useState<number | null>(
+    props.initialHeightMeters ?? null,
+  );
+  const [resolution, setResolution] = useState(
+    props.initialResolution ?? { nx: 100, ny: 100 },
+  );
 
   const [hourlyWeatherData, setHourlyWeatherData] = useState<WeatherTimestep[]>(
     [],
@@ -63,8 +69,26 @@ export function Controls(props: Props) {
   const currentWeather = weatherTimesteps[currentIndex];
 
   useEffect(() => {
-    props.onCurrentWeather(currentWeather);
-  }, [currentWeather]);
+    if (heightMeters === null && props.heights.length > 0) {
+      setHeightMeters(props.heights[0]);
+    }
+  }, [props.heights, heightMeters]);
+
+  useEffect(() => {
+    if (heightMeters === null || !currentWeather) {
+      props.onQueryControls(null);
+      return;
+    }
+
+    const queryControls: WindQuery_Controls = {
+      heightMeters,
+      resolution,
+      wsRef: currentWeather.wsRef,
+      wdRef: currentWeather.wdRef,
+    };
+
+    props.onQueryControls(queryControls);
+  }, [heightMeters, resolution, currentWeather]);
 
   useEffect(() => {
     if (!props.mapCenter) {
@@ -89,7 +113,7 @@ export function Controls(props: Props) {
       });
   }, [props.mapCenter, currentDate, setCurrentIndex]);
 
-  const currentResKey = `${props.resolution.nx}×${props.resolution.ny}`;
+  const currentResKey = `${resolution.nx}×${resolution.ny}`;
 
   if (isCollapsed) {
     return (
@@ -136,8 +160,8 @@ export function Controls(props: Props) {
           <label className="control-label">Höhe</label>
           <select
             className="control-select"
-            value={props.heightMeters ?? ""}
-            onChange={(e) => props.onHeightMeters(Number(e.target.value))}
+            value={heightMeters ?? ""}
+            onChange={(e) => setHeightMeters(Number(e.target.value))}
             disabled={props.heights.length === 0}
           >
             {props.heights.length === 0 ? (
@@ -179,7 +203,7 @@ export function Controls(props: Props) {
                 (p) => `${p.nx}×${p.ny}` === e.target.value,
               );
               if (preset) {
-                props.onResolution({ nx: preset.nx, ny: preset.ny });
+                setResolution({ nx: preset.nx, ny: preset.ny });
               }
             }}
           >
@@ -193,8 +217,7 @@ export function Controls(props: Props) {
             ))}
           </select>
           <div className="control-hint">
-            {props.resolution.nx}×{props.resolution.ny} ={" "}
-            {props.resolution.nx * props.resolution.ny}
+            {resolution.nx}×{resolution.ny} = {resolution.nx * resolution.ny}
           </div>
         </div>
 
