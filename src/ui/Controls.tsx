@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { VISUALIZATION_OPTIONS, type VisualizationType } from "../map/config";
+import { TimeControl } from "./Time";
+import type { WeatherTimestep } from "../api/weather";
 
 type Props = {
   loading: boolean;
@@ -12,6 +14,17 @@ type Props = {
   onVisualizationType: (type: VisualizationType) => void;
   onGeneratePermalink: () => void;
   permalinkCopied: boolean;
+  timesteps: WeatherTimestep[];
+  currentIndex: number;
+  onIndexChange: (index: number) => void;
+  playing: boolean;
+  onPlayPause: () => void;
+  playbackSpeed: number;
+  onSpeedChange: (speed: number) => void;
+  currentDate: string;
+  onDateChange: (date: string) => void;
+  timestepInterval: number;
+  onTimestepIntervalChange: (minutes: number) => void;
 };
 
 const PRESET_RESOLUTIONS = [
@@ -24,6 +37,7 @@ const PRESET_RESOLUTIONS = [
 
 export function Controls(props: Props) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [timeControlMinimized, setTimeControlMinimized] = useState(false);
 
   const currentResKey = `${props.resolution.nx}×${props.resolution.ny}`;
 
@@ -50,104 +64,123 @@ export function Controls(props: Props) {
   }
 
   return (
-    <div className="controls-panel">
-      <div className="controls-header">
-        <div className="controls-title">UrbanWindViz</div>
-        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <div className="controls-status">
-            {props.loading ? "Loading…" : "Ready"}
-          </div>
-          <button
-            className="controls-collapse-btn"
-            onClick={() => setIsCollapsed(true)}
-            title="Einstellungen minimieren"
-          >
-            ✕
-          </button>
-        </div>
-      </div>
-
-      <div className="control-group">
-        <label className="control-label">Höhe</label>
-        <select
-          className="control-select"
-          value={props.heightMeters ?? ""}
-          onChange={(e) => props.onHeightMeters(Number(e.target.value))}
-          disabled={props.heights.length === 0}
-        >
-          {props.heights.length === 0 ? (
-            <option value="">(keine Höhen verfügbar)</option>
-          ) : (
-            props.heights.map((h) => (
-              <option key={h} value={h}>
-                {h} m
-              </option>
-            ))
-          )}
-        </select>
-      </div>
-
-      <div className="control-group">
-        <label className="control-label">Visualisierung</label>
-        <select
-          className="control-select"
-          value={props.visualizationType}
-          onChange={(e) =>
-            props.onVisualizationType(e.target.value as VisualizationType)
-          }
-        >
-          {VISUALIZATION_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="control-group">
-        <label className="control-label">Auflösung</label>
-        <select
-          className="control-select"
-          value={currentResKey}
-          onChange={(e) => {
-            const preset = PRESET_RESOLUTIONS.find(
-              (p) => `${p.nx}×${p.ny}` === e.target.value
-            );
-            if (preset) {
-              props.onResolution({ nx: preset.nx, ny: preset.ny });
-            }
-          }}
-        >
-          {PRESET_RESOLUTIONS.map((preset) => (
-            <option
-              key={`${preset.nx}×${preset.ny}`}
-              value={`${preset.nx}×${preset.ny}`}
+    <>
+      <div className="controls-panel">
+        <div className="controls-header">
+          <div className="controls-title">UrbanWindViz</div>
+          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+            <div className="controls-status">
+              {props.loading ? "Loading…" : "Ready"}
+            </div>
+            <button
+              className="controls-collapse-btn"
+              onClick={() => setIsCollapsed(true)}
+              title="Einstellungen minimieren"
             >
-              {preset.label}
-            </option>
-          ))}
-        </select>
-        <div className="control-hint">
-          {props.resolution.nx}×{props.resolution.ny} ={" "}
-          {props.resolution.nx * props.resolution.ny}
+              ✕
+            </button>
+          </div>
+        </div>
+
+        <div className="control-group">
+          <label className="control-label">Höhe</label>
+          <select
+            className="control-select"
+            value={props.heightMeters ?? ""}
+            onChange={(e) => props.onHeightMeters(Number(e.target.value))}
+            disabled={props.heights.length === 0}
+          >
+            {props.heights.length === 0 ? (
+              <option value="">(keine Höhen verfügbar)</option>
+            ) : (
+              props.heights.map((h) => (
+                <option key={h} value={h}>
+                  {h} m
+                </option>
+              ))
+            )}
+          </select>
+        </div>
+
+        <div className="control-group">
+          <label className="control-label">Visualisierung</label>
+          <select
+            className="control-select"
+            value={props.visualizationType}
+            onChange={(e) =>
+              props.onVisualizationType(e.target.value as VisualizationType)
+            }
+          >
+            {VISUALIZATION_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="control-group">
+          <label className="control-label">Auflösung</label>
+          <select
+            className="control-select"
+            value={currentResKey}
+            onChange={(e) => {
+              const preset = PRESET_RESOLUTIONS.find(
+                (p) => `${p.nx}×${p.ny}` === e.target.value
+              );
+              if (preset) {
+                props.onResolution({ nx: preset.nx, ny: preset.ny });
+              }
+            }}
+          >
+            {PRESET_RESOLUTIONS.map((preset) => (
+              <option
+                key={`${preset.nx}×${preset.ny}`}
+                value={`${preset.nx}×${preset.ny}`}
+              >
+                {preset.label}
+              </option>
+            ))}
+          </select>
+          <div className="control-hint">
+            {props.resolution.nx}×{props.resolution.ny} ={" "}
+            {props.resolution.nx * props.resolution.ny}
+          </div>
+        </div>
+
+        <div className="control-group">
+          <label className="control-label">Permalink</label>
+          <button
+            className="control-button"
+            onClick={props.onGeneratePermalink}
+            title="Link zur aktuellen Ansicht kopieren"
+          >
+            📋 Link kopieren
+          </button>
+          {props.permalinkCopied && (
+            <div className="control-hint" style={{ color: "#4caf50" }}>
+              ✓ Link kopiert!
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="control-group">
-        <label className="control-label">Permalink</label>
-        <button
-          className="control-button"
-          onClick={props.onGeneratePermalink}
-          title="Link zur aktuellen Ansicht kopieren"
-        >
-          📋 Link kopieren
-        </button>
-        {props.permalinkCopied && (
-          <div className="control-hint" style={{ color: "#4caf50" }}>
-            ✓ Link kopiert!
-          </div>
-        )}
-      </div>
-    </div>
+      <TimeControl
+        timesteps={props.timesteps}
+        currentIndex={props.currentIndex}
+        onIndexChange={props.onIndexChange}
+        playing={props.playing}
+        onPlayPause={props.onPlayPause}
+        playbackSpeed={props.playbackSpeed}
+        onSpeedChange={props.onSpeedChange}
+        loading={props.loading}
+        currentDate={props.currentDate}
+        onDateChange={props.onDateChange}
+        isMinimized={timeControlMinimized}
+        onToggleMinimize={() => setTimeControlMinimized(!timeControlMinimized)}
+        timestepInterval={props.timestepInterval}
+        onTimestepIntervalChange={props.onTimestepIntervalChange}
+      />
+    </>
   );
 }

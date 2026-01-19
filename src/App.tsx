@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { Controls } from "./ui/Controls";
 import { MapView } from "./map/MapView";
 import { Footer } from "./ui/Footer";
-import { TimeControl } from "./ui/Time";
 import { checkHealth } from "./api/health";
 import type { BBox, DatasetInfo, WindFieldGrid } from "./api/contract";
 import { fetchDatasets } from "./api/datasets";
@@ -55,7 +54,6 @@ export function App() {
   const [playing, setPlaying] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [currentDate, setCurrentDate] = useState(getDefaultDate());
-  const [timeControlMinimized, setTimeControlMinimized] = useState(false);
 
   const weatherTimesteps = useMemo(() => {
     return interpolateTimesteps(hourlyWeatherData, timestepInterval);
@@ -260,9 +258,6 @@ export function App() {
           onVisualizationType={setVisualizationType}
           onGeneratePermalink={handleGeneratePermalink}
           permalinkCopied={permalinkCopied}
-        />
-
-        <TimeControl
           timesteps={weatherTimesteps}
           currentIndex={currentIndex}
           onIndexChange={setCurrentIndex}
@@ -270,13 +265,8 @@ export function App() {
           onPlayPause={() => setPlaying(!playing)}
           playbackSpeed={playbackSpeed}
           onSpeedChange={setPlaybackSpeed}
-          loading={weatherLoading}
           currentDate={currentDate}
           onDateChange={setCurrentDate}
-          isMinimized={timeControlMinimized}
-          onToggleMinimize={() =>
-            setTimeControlMinimized(!timeControlMinimized)
-          }
           timestepInterval={timestepInterval}
           onTimestepIntervalChange={setTimestepInterval}
         />
