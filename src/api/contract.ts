@@ -36,13 +36,18 @@ export type BackendWindResponse = {
   lat_b64?: string;
 };
 
-export type WindQuery = {
+export type WindQuery_Controls = {
   heightMeters: number;
-  bbox: BBox;
   resolution: { nx: number; ny: number };
   wsRef?: number;
   wdRef?: number;
 };
+
+export type WindQuery_Map = {
+  bbox: BBox;
+};
+
+export type WindQuery = WindQuery_Controls & WindQuery_Map;
 
 export type WindFieldGrid = {
   heightMeters: number;

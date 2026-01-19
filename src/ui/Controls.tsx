@@ -1,7 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { VISUALIZATION_OPTIONS, type VisualizationType } from "../map/config";
 import { TimeControl } from "./Time";
-import type { WeatherTimestep } from "../api/weather";
+import {
+  fetchWeatherTimesteps,
+  interpolateTimesteps,
+  getDefaultDate,
+  type WeatherTimestep,
+} from "../api/weather";
+import { useAnimation } from "../util/animation";
 
 type Props = {
   loading: boolean;
@@ -14,17 +20,9 @@ type Props = {
   onVisualizationType: (type: VisualizationType) => void;
   onGeneratePermalink: () => void;
   permalinkCopied: boolean;
-  timesteps: WeatherTimestep[];
-  currentIndex: number;
-  onIndexChange: (index: number) => void;
-  playing: boolean;
-  onPlayPause: () => void;
-  playbackSpeed: number;
-  onSpeedChange: (speed: number) => void;
-  currentDate: string;
-  onDateChange: (date: string) => void;
-  timestepInterval: number;
-  onTimestepIntervalChange: (minutes: number) => void;
+  mapCenter?: { lon: number; lat: number };
+  queryInProgress: boolean;
+  onCurrentWeather: (weather: WeatherTimestep | undefined) => void;
 };
 
 const PRESET_RESOLUTIONS = [
@@ -38,6 +36,58 @@ const PRESET_RESOLUTIONS = [
 export function Controls(props: Props) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [timeControlMinimized, setTimeControlMinimized] = useState(false);
+
+  const [hourlyWeatherData, setHourlyWeatherData] = useState<WeatherTimestep[]>(
+    [],
+  );
+  const [timestepInterval, setTimestepInterval] = useState(60);
+  const [weatherLoading, setWeatherLoading] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [currentDate, setCurrentDate] = useState(getDefaultDate());
+
+  const weatherTimesteps = useMemo(() => {
+    return interpolateTimesteps(hourlyWeatherData, timestepInterval);
+  }, [hourlyWeatherData, timestepInterval]);
+
+  const { currentIndex, setCurrentIndex } = useAnimation(
+    weatherTimesteps.length,
+    playbackSpeed,
+    playing && !props.queryInProgress,
+  );
+
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [timestepInterval, setCurrentIndex]);
+
+  const currentWeather = weatherTimesteps[currentIndex];
+
+  useEffect(() => {
+    props.onCurrentWeather(currentWeather);
+  }, [currentWeather]);
+
+  useEffect(() => {
+    if (!props.mapCenter) {
+      setHourlyWeatherData([]);
+      return;
+    }
+
+    setWeatherLoading(true);
+    setPlaying(false);
+
+    fetchWeatherTimesteps(props.mapCenter.lat, props.mapCenter.lon, currentDate)
+      .then((timesteps) => {
+        setHourlyWeatherData(timesteps);
+        setCurrentIndex(0);
+      })
+      .catch((err) => {
+        console.error("Failed to load weather data:", err);
+        setHourlyWeatherData([]);
+      })
+      .finally(() => {
+        setWeatherLoading(false);
+      });
+  }, [props.mapCenter, currentDate, setCurrentIndex]);
 
   const currentResKey = `${props.resolution.nx}×${props.resolution.ny}`;
 
@@ -126,7 +176,7 @@ export function Controls(props: Props) {
             value={currentResKey}
             onChange={(e) => {
               const preset = PRESET_RESOLUTIONS.find(
-                (p) => `${p.nx}×${p.ny}` === e.target.value
+                (p) => `${p.nx}×${p.ny}` === e.target.value,
               );
               if (preset) {
                 props.onResolution({ nx: preset.nx, ny: preset.ny });
@@ -166,20 +216,20 @@ export function Controls(props: Props) {
       </div>
 
       <TimeControl
-        timesteps={props.timesteps}
-        currentIndex={props.currentIndex}
-        onIndexChange={props.onIndexChange}
-        playing={props.playing}
-        onPlayPause={props.onPlayPause}
-        playbackSpeed={props.playbackSpeed}
-        onSpeedChange={props.onSpeedChange}
-        loading={props.loading}
-        currentDate={props.currentDate}
-        onDateChange={props.onDateChange}
+        timesteps={weatherTimesteps}
+        currentIndex={currentIndex}
+        onIndexChange={setCurrentIndex}
+        playing={playing}
+        onPlayPause={() => setPlaying(!playing)}
+        playbackSpeed={playbackSpeed}
+        onSpeedChange={setPlaybackSpeed}
+        loading={weatherLoading}
+        currentDate={currentDate}
+        onDateChange={setCurrentDate}
         isMinimized={timeControlMinimized}
         onToggleMinimize={() => setTimeControlMinimized(!timeControlMinimized)}
-        timestepInterval={props.timestepInterval}
-        onTimestepIntervalChange={props.onTimestepIntervalChange}
+        timestepInterval={timestepInterval}
+        onTimestepIntervalChange={setTimestepInterval}
       />
     </>
   );

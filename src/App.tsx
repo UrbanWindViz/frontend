@@ -9,13 +9,7 @@ import { fetchWindFieldHttp } from "./api/wind";
 import "./index.css";
 import type { VisualizationType } from "./map/config";
 import { useUrlState, buildPermalink } from "./util/urlStats";
-import { useAnimation } from "./util/animation";
-import {
-  fetchWeatherTimesteps,
-  interpolateTimesteps,
-  getDefaultDate,
-  type WeatherTimestep,
-} from "./api/weather";
+import type { WeatherTimestep } from "./api/weather";
 
 const HEALTH_INTERVAL_MS = 10_000;
 
@@ -46,30 +40,9 @@ export function App() {
 
   const [windField, setWindField] = useState<WindFieldGrid | null>(null);
 
-  const [hourlyWeatherData, setHourlyWeatherData] = useState<WeatherTimestep[]>(
-    []
-  );
-  const [timestepInterval, setTimestepInterval] = useState(60);
-  const [weatherLoading, setWeatherLoading] = useState(false);
-  const [playing, setPlaying] = useState(false);
-  const [playbackSpeed, setPlaybackSpeed] = useState(1);
-  const [currentDate, setCurrentDate] = useState(getDefaultDate());
-
-  const weatherTimesteps = useMemo(() => {
-    return interpolateTimesteps(hourlyWeatherData, timestepInterval);
-  }, [hourlyWeatherData, timestepInterval]);
-
-  const { currentIndex, setCurrentIndex } = useAnimation(
-    weatherTimesteps.length,
-    playbackSpeed,
-    playing && !queryInProgress
-  );
-
-  useEffect(() => {
-    setCurrentIndex(0);
-  }, [timestepInterval, setCurrentIndex]);
-
-  const currentWeather = weatherTimesteps[currentIndex];
+  const [currentWeather, setCurrentWeather] = useState<
+    WeatherTimestep | undefined
+  >();
 
   useEffect(() => {
     let cancelled = false;
@@ -134,42 +107,6 @@ export function App() {
     }
   }, [urlState]);
 
-  useEffect(() => {
-    if (!mapCenter) {
-      setHourlyWeatherData([]);
-      return;
-    }
-
-    setWeatherLoading(true);
-    setPlaying(false);
-
-    fetchWeatherTimesteps(mapCenter.lat, mapCenter.lon, currentDate)
-      .then((timesteps) => {
-        setHourlyWeatherData(timesteps);
-        setCurrentIndex(0);
-      })
-      .catch((err) => {
-        console.error("Failed to load weather data:", err);
-        setHourlyWeatherData([]);
-      })
-      .finally(() => {
-        setWeatherLoading(false);
-      });
-  }, [mapCenter, currentDate]);
-
-  const selectDataset = useCallback(
-    (ds: DatasetInfo) => {
-      setHeights(ds.availableHeightsMeters ?? []);
-
-      const defaultHeight =
-        urlState.heightMeters ?? ds.availableHeightsMeters?.[0] ?? null;
-      setHeightMeters(defaultHeight);
-
-      setWindField(null);
-    },
-    [urlState.heightMeters]
-  );
-
   const canQuery = useMemo(() => {
     return (
       !!bbox && heightMeters !== null && heights.length > 0 && !!currentWeather
@@ -183,8 +120,8 @@ export function App() {
       heightMeters: heightMeters!,
       bbox: bbox!,
       resolution,
-      wsRef: currentWeather.wsRef,
-      wdRef: currentWeather.wdRef,
+      wsRef: currentWeather!.wsRef,
+      wdRef: currentWeather!.wdRef,
     };
   }, [canQuery, heightMeters, bbox, resolution, currentWeather]);
 
@@ -248,7 +185,7 @@ export function App() {
         />
 
         <Controls
-          loading={loading || weatherLoading}
+          loading={loading}
           heights={heights}
           heightMeters={heightMeters}
           onHeightMeters={setHeightMeters}
@@ -258,17 +195,9 @@ export function App() {
           onVisualizationType={setVisualizationType}
           onGeneratePermalink={handleGeneratePermalink}
           permalinkCopied={permalinkCopied}
-          timesteps={weatherTimesteps}
-          currentIndex={currentIndex}
-          onIndexChange={setCurrentIndex}
-          playing={playing}
-          onPlayPause={() => setPlaying(!playing)}
-          playbackSpeed={playbackSpeed}
-          onSpeedChange={setPlaybackSpeed}
-          currentDate={currentDate}
-          onDateChange={setCurrentDate}
-          timestepInterval={timestepInterval}
-          onTimestepIntervalChange={setTimestepInterval}
+          mapCenter={mapCenter}
+          queryInProgress={queryInProgress}
+          onCurrentWeather={setCurrentWeather}
         />
       </div>
 
