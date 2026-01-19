@@ -12,7 +12,6 @@ import type {
 import { fetchDatasets } from "./api/datasets";
 import { fetchWindFieldHttp } from "./api/wind";
 import "./index.css";
-import type { VisualizationType } from "./map/config";
 import { useUrlState, buildPermalink } from "./util/urlStats";
 
 const HEALTH_INTERVAL_MS = 10_000;
@@ -29,8 +28,6 @@ export function App() {
   const [mapQuery, setMapQuery] = useState<WindQuery_Map | null>(null);
 
   const [heights, setHeights] = useState<number[]>([]);
-  const [visualizationType, setVisualizationType] =
-    useState<VisualizationType>("arrows");
 
   const [mapCenter, setMapCenter] = useState<
     { lon: number; lat: number } | undefined
@@ -92,12 +89,6 @@ export function App() {
     return () => ac.abort();
   }, []);
 
-  useEffect(() => {
-    if (urlState.visualizationType) {
-      setVisualizationType(urlState.visualizationType);
-    }
-  }, [urlState]);
-
   const query = useMemo<WindQuery | null>(() => {
     if (!mapQuery || !queryControls) return null;
 
@@ -138,10 +129,8 @@ export function App() {
   const handleGeneratePermalink = useCallback(() => {
     const link = buildPermalink({
       heightMeters: queryControls?.heightMeters ?? null,
-      resolution: queryControls
-        ? { nx: queryControls.resolution.nx, ny: queryControls.resolution.ny }
-        : { nx: 100, ny: 100 },
-      visualizationType,
+      resolution: mapQuery?.resolution ?? { nx: 100, ny: 100 },
+      visualizationType: "arrows",
       mapCenter,
       mapZoom,
     });
@@ -150,20 +139,24 @@ export function App() {
       setPermalinkCopied(true);
       setTimeout(() => setPermalinkCopied(false), 3000);
     });
-  }, [queryControls, visualizationType, mapCenter, mapZoom]);
+  }, [queryControls, mapQuery, mapCenter, mapZoom]);
 
   return (
     <div className="app-container">
       <div className="app-main">
         <MapView
           windField={windField}
-          visualizationType={visualizationType}
           initialCenter={
             urlState.lon && urlState.lat
               ? { lon: urlState.lon, lat: urlState.lat }
               : undefined
           }
           initialZoom={urlState.zoom}
+          initialResolution={
+            urlState.nx && urlState.ny
+              ? { nx: urlState.nx, ny: urlState.ny }
+              : undefined
+          }
           onMapQuery={setMapQuery}
           onMapMove={onMapMove}
         />
@@ -171,19 +164,12 @@ export function App() {
         <Controls
           loading={loading}
           heights={heights}
-          visualizationType={visualizationType}
-          onVisualizationType={setVisualizationType}
           onGeneratePermalink={handleGeneratePermalink}
           permalinkCopied={permalinkCopied}
           mapCenter={mapCenter}
           queryInProgress={queryInProgress}
           onQueryControls={setQueryControls}
           initialHeightMeters={urlState.heightMeters}
-          initialResolution={
-            urlState.nx && urlState.ny
-              ? { nx: urlState.nx, ny: urlState.ny }
-              : undefined
-          }
         />
       </div>
 

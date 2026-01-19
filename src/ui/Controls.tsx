@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from "react";
-import { VISUALIZATION_OPTIONS, type VisualizationType } from "../map/config";
 import { TimeControl } from "./Time";
 import {
   fetchWeatherTimesteps,
@@ -13,15 +12,12 @@ import type { WindQuery_Controls } from "../api/contract";
 type Props = {
   loading: boolean;
   heights: number[];
-  visualizationType: VisualizationType;
-  onVisualizationType: (type: VisualizationType) => void;
   onGeneratePermalink: () => void;
   permalinkCopied: boolean;
   mapCenter?: { lon: number; lat: number };
   queryInProgress: boolean;
   onQueryControls: (controls: WindQuery_Controls | null) => void;
   initialHeightMeters?: number;
-  initialResolution?: { nx: number; ny: number };
 };
 
 const PRESET_RESOLUTIONS = [
@@ -38,9 +34,6 @@ export function Controls(props: Props) {
 
   const [heightMeters, setHeightMeters] = useState<number | null>(
     props.initialHeightMeters ?? null,
-  );
-  const [resolution, setResolution] = useState(
-    props.initialResolution ?? { nx: 100, ny: 100 },
   );
 
   const [hourlyWeatherData, setHourlyWeatherData] = useState<WeatherTimestep[]>(
@@ -82,13 +75,12 @@ export function Controls(props: Props) {
 
     const queryControls: WindQuery_Controls = {
       heightMeters,
-      resolution,
       wsRef: currentWeather.wsRef,
       wdRef: currentWeather.wdRef,
     };
 
     props.onQueryControls(queryControls);
-  }, [heightMeters, resolution, currentWeather]);
+  }, [heightMeters, currentWeather]);
 
   useEffect(() => {
     if (!props.mapCenter) {
@@ -112,8 +104,6 @@ export function Controls(props: Props) {
         setWeatherLoading(false);
       });
   }, [props.mapCenter, currentDate, setCurrentIndex]);
-
-  const currentResKey = `${resolution.nx}×${resolution.ny}`;
 
   if (isCollapsed) {
     return (
@@ -174,51 +164,6 @@ export function Controls(props: Props) {
               ))
             )}
           </select>
-        </div>
-
-        <div className="control-group">
-          <label className="control-label">Visualisierung</label>
-          <select
-            className="control-select"
-            value={props.visualizationType}
-            onChange={(e) =>
-              props.onVisualizationType(e.target.value as VisualizationType)
-            }
-          >
-            {VISUALIZATION_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="control-group">
-          <label className="control-label">Auflösung</label>
-          <select
-            className="control-select"
-            value={currentResKey}
-            onChange={(e) => {
-              const preset = PRESET_RESOLUTIONS.find(
-                (p) => `${p.nx}×${p.ny}` === e.target.value,
-              );
-              if (preset) {
-                setResolution({ nx: preset.nx, ny: preset.ny });
-              }
-            }}
-          >
-            {PRESET_RESOLUTIONS.map((preset) => (
-              <option
-                key={`${preset.nx}×${preset.ny}`}
-                value={`${preset.nx}×${preset.ny}`}
-              >
-                {preset.label}
-              </option>
-            ))}
-          </select>
-          <div className="control-hint">
-            {resolution.nx}×{resolution.ny} = {resolution.nx * resolution.ny}
-          </div>
         </div>
 
         <div className="control-group">
