@@ -4,12 +4,11 @@ import { MapView } from "./map/MapView";
 import { Footer } from "./ui/Footer";
 import { checkHealth } from "./api/health";
 import type {
-  WindFieldGrid,
   WindQuery_Controls,
   WindQuery_Map,
   WindQuery,
 } from "./api/contract";
-import { fetchWindFieldHttp } from "./api/wind";
+import { useWindField } from "./hooks";
 import "./index.css";
 import { buildPermalink } from "./util/urlStats";
 
@@ -19,9 +18,6 @@ export function App() {
   const [backendUp, setBackendUp] = useState<boolean | null>(null);
   const [lastCheck, setLastCheck] = useState<Date | null>(null);
 
-  const [loading, setLoading] = useState(false);
-  const [queryInProgress, setQueryInProgress] = useState(false);
-
   const [mapQuery, setMapQuery] = useState<WindQuery_Map | null>(null);
 
   const [mapCenter, setMapCenter] = useState<
@@ -30,8 +26,6 @@ export function App() {
   const [mapZoom, setMapZoom] = useState<number | undefined>();
 
   const [permalinkCopied, setPermalinkCopied] = useState(false);
-
-  const [windField, setWindField] = useState<WindFieldGrid | null>(null);
 
   const [queryControls, setQueryControls] = useState<WindQuery_Controls | null>(
     null,
@@ -78,25 +72,7 @@ export function App() {
     };
   }, [mapQuery, queryControls]);
 
-  useEffect(() => {
-    if (!query) return;
-
-    const ac = new AbortController();
-    setLoading(true);
-    setQueryInProgress(true);
-
-    fetchWindFieldHttp(query, ac.signal)
-      .then(setWindField)
-      .catch((err) => {
-        if (err?.name !== "AbortError") console.error(err);
-      })
-      .finally(() => {
-        setLoading(false);
-        setQueryInProgress(false);
-      });
-
-    return () => ac.abort();
-  }, [query]);
+  const { windField, loading, queryInProgress } = useWindField(query);
 
   const onMapMove = useCallback(
     (center: { lon: number; lat: number }, zoom: number) => {

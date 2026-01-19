@@ -1,14 +1,9 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { TimeControl } from "./Time";
-import {
-  fetchWeatherTimesteps,
-  interpolateTimesteps,
-  getDefaultDate,
-  type WeatherTimestep,
-} from "../api/weather";
+import { getDefaultDate } from "../api/weather";
 import { useAnimation } from "../util/animation";
 import { useUrlState } from "../util/urlStats";
-import { fetchDatasets } from "../api/datasets";
+import { useWeatherData, useAvailableHeights } from "../hooks";
 import type { WindQuery_Controls } from "../api/contract";
 
 type Props = {
@@ -25,23 +20,27 @@ export function Controls(props: Props) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [timeControlMinimized, setTimeControlMinimized] = useState(false);
 
-  const [heights, setHeights] = useState<number[]>([]);
+  const { heights } = useAvailableHeights();
+
   const [heightMeters, setHeightMeters] = useState<number | null>(
     urlState.heightMeters ?? null,
   );
 
-  const [hourlyWeatherData, setHourlyWeatherData] = useState<WeatherTimestep[]>(
-    [],
-  );
   const [timestepInterval, setTimestepInterval] = useState(60);
-  const [weatherLoading, setWeatherLoading] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [currentDate, setCurrentDate] = useState(getDefaultDate());
 
-  const weatherTimesteps = useMemo(() => {
-    return interpolateTimesteps(hourlyWeatherData, timestepInterval);
-  }, [hourlyWeatherData, timestepInterval]);
+  const { timesteps: weatherTimesteps, loading: weatherLoading } =
+    useWeatherData(
+      {
+        lat: props.mapCenter?.lat,
+        lon: props.mapCenter?.lon,
+        date: currentDate,
+        timestepInterval,
+      },
+      0,
+    );
 
   const { currentIndex, setCurrentIndex } = useAnimation(
     weatherTimesteps.length,
@@ -49,26 +48,11 @@ export function Controls(props: Props) {
     playing && !props.queryInProgress,
   );
 
+  const currentWeatherAtIndex = weatherTimesteps[currentIndex];
+
   useEffect(() => {
     setCurrentIndex(0);
   }, [timestepInterval, setCurrentIndex]);
-
-  const currentWeather = weatherTimesteps[currentIndex];
-
-  useEffect(() => {
-    const ac = new AbortController();
-
-    fetchDatasets(ac.signal)
-      .then((ds) => {
-        const allHeights = ds.map((c) => c.availableHeightsMeters).flat();
-        setHeights(allHeights);
-      })
-      .catch((e) => {
-        if (e?.name !== "AbortError") console.error(e);
-      });
-
-    return () => ac.abort();
-  }, []);
 
   useEffect(() => {
     if (heightMeters === null && heights.length > 0) {
@@ -77,42 +61,25 @@ export function Controls(props: Props) {
   }, [heights, heightMeters]);
 
   useEffect(() => {
-    if (heightMeters === null || !currentWeather) {
+    if (heightMeters === null || !currentWeatherAtIndex) {
       props.onQueryControls(null);
       return;
     }
 
     const queryControls: WindQuery_Controls = {
       heightMeters,
-      wsRef: currentWeather.wsRef,
-      wdRef: currentWeather.wdRef,
+      wsRef: currentWeatherAtIndex.wsRef,
+      wdRef: currentWeatherAtIndex.wdRef,
     };
 
     props.onQueryControls(queryControls);
-  }, [heightMeters, currentWeather]);
+  }, [heightMeters, currentWeatherAtIndex, props]);
 
   useEffect(() => {
-    if (!props.mapCenter) {
-      setHourlyWeatherData([]);
-      return;
+    if (props.mapCenter) {
+      setPlaying(false);
     }
-
-    setWeatherLoading(true);
-    setPlaying(false);
-
-    fetchWeatherTimesteps(props.mapCenter.lat, props.mapCenter.lon, currentDate)
-      .then((timesteps) => {
-        setHourlyWeatherData(timesteps);
-        setCurrentIndex(0);
-      })
-      .catch((err) => {
-        console.error("Failed to load weather data:", err);
-        setHourlyWeatherData([]);
-      })
-      .finally(() => {
-        setWeatherLoading(false);
-      });
-  }, [props.mapCenter, currentDate, setCurrentIndex]);
+  }, [props.mapCenter]);
 
   if (isCollapsed) {
     return (

@@ -6,6 +6,7 @@ import { buildWindArrowLayer } from "./WindLayer";
 import { buildWindHeatmapLayer } from "./HeatmapLayer";
 import { VISUALIZATION_OPTIONS, type VisualizationType } from "./config";
 import { useUrlState } from "../util/urlStats";
+import { useMapQuery } from "../hooks";
 
 type Props = {
   windField: WindFieldGrid | null;
@@ -36,22 +37,14 @@ export function MapView({ windField, onMapQuery, onMapMove }: Props) {
   const mapRef = useRef<Map | null>(null);
   const overlayRef = useRef<MapboxOverlay | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const onMapQueryRef = useRef(onMapQuery);
-  const onMapMoveRef = useRef(onMapMove);
-  const resolutionRef = useRef(resolution);
   const previousLayersRef = useRef<any[]>([]);
 
-  useEffect(() => {
-    onMapQueryRef.current = onMapQuery;
-  }, [onMapQuery]);
-
-  useEffect(() => {
-    onMapMoveRef.current = onMapMove;
-  }, [onMapMove]);
-
-  useEffect(() => {
-    resolutionRef.current = resolution;
-  }, [resolution]);
+  useMapQuery({
+    map: mapRef.current,
+    resolution,
+    onMapQuery,
+    onMapMove,
+  });
 
   const layers = useMemo(() => {
     if (!windField) return [];
@@ -111,30 +104,6 @@ export function MapView({ windField, onMapQuery, onMapMove }: Props) {
     mapRef.current = map;
     overlayRef.current = overlay;
 
-    const emitBbox = () => {
-      const b = map.getBounds();
-      onMapQueryRef.current({
-        bbox: {
-          minLon: b.getWest(),
-          minLat: b.getSouth(),
-          maxLon: b.getEast(),
-          maxLat: b.getNorth(),
-        },
-        resolution: resolutionRef.current,
-      });
-
-      if (onMapMoveRef.current) {
-        const center = map.getCenter();
-        const zoom = map.getZoom();
-        onMapMoveRef.current({ lon: center.lng, lat: center.lat }, zoom);
-      }
-    };
-
-    map.on("moveend", emitBbox);
-    map.on("zoomend", emitBbox);
-
-    map.on("load", emitBbox);
-
     return () => {
       if (overlayRef.current) {
         previousLayersRef.current.forEach((layer) => {
@@ -148,21 +117,6 @@ export function MapView({ windField, onMapQuery, onMapMove }: Props) {
       map.remove();
     };
   }, []);
-
-  useEffect(() => {
-    if (mapRef.current) {
-      const b = mapRef.current.getBounds();
-      onMapQueryRef.current({
-        bbox: {
-          minLon: b.getWest(),
-          minLat: b.getSouth(),
-          maxLon: b.getEast(),
-          maxLat: b.getNorth(),
-        },
-        resolution,
-      });
-    }
-  }, [resolution]);
 
   useEffect(() => {
     if (overlayRef.current) {
