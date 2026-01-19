@@ -9,16 +9,13 @@ import type {
   WindQuery_Map,
   WindQuery,
 } from "./api/contract";
-import { fetchDatasets } from "./api/datasets";
 import { fetchWindFieldHttp } from "./api/wind";
 import "./index.css";
-import { useUrlState, buildPermalink } from "./util/urlStats";
+import { buildPermalink } from "./util/urlStats";
 
 const HEALTH_INTERVAL_MS = 10_000;
 
 export function App() {
-  const urlState = useUrlState();
-
   const [backendUp, setBackendUp] = useState<boolean | null>(null);
   const [lastCheck, setLastCheck] = useState<Date | null>(null);
 
@@ -26,8 +23,6 @@ export function App() {
   const [queryInProgress, setQueryInProgress] = useState(false);
 
   const [mapQuery, setMapQuery] = useState<WindQuery_Map | null>(null);
-
-  const [heights, setHeights] = useState<number[]>([]);
 
   const [mapCenter, setMapCenter] = useState<
     { lon: number; lat: number } | undefined
@@ -72,21 +67,6 @@ export function App() {
       ac?.abort();
       clearInterval(id);
     };
-  }, []);
-
-  useEffect(() => {
-    const ac = new AbortController();
-
-    fetchDatasets(ac.signal)
-      .then((ds) => {
-        const allHeights = ds.map((c) => c.availableHeightsMeters).flat();
-        setHeights(allHeights);
-      })
-      .catch((e) => {
-        if (e?.name !== "AbortError") console.error(e);
-      });
-
-    return () => ac.abort();
   }, []);
 
   const query = useMemo<WindQuery | null>(() => {
@@ -152,7 +132,6 @@ export function App() {
 
         <Controls
           loading={loading}
-          heights={heights}
           onGeneratePermalink={handleGeneratePermalink}
           permalinkCopied={permalinkCopied}
           mapCenter={mapCenter}

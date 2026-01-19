@@ -8,11 +8,11 @@ import {
 } from "../api/weather";
 import { useAnimation } from "../util/animation";
 import { useUrlState } from "../util/urlStats";
+import { fetchDatasets } from "../api/datasets";
 import type { WindQuery_Controls } from "../api/contract";
 
 type Props = {
   loading: boolean;
-  heights: number[];
   onGeneratePermalink: () => void;
   permalinkCopied: boolean;
   mapCenter?: { lon: number; lat: number };
@@ -25,6 +25,7 @@ export function Controls(props: Props) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [timeControlMinimized, setTimeControlMinimized] = useState(false);
 
+  const [heights, setHeights] = useState<number[]>([]);
   const [heightMeters, setHeightMeters] = useState<number | null>(
     urlState.heightMeters ?? null,
   );
@@ -55,10 +56,25 @@ export function Controls(props: Props) {
   const currentWeather = weatherTimesteps[currentIndex];
 
   useEffect(() => {
-    if (heightMeters === null && props.heights.length > 0) {
-      setHeightMeters(props.heights[0]);
+    const ac = new AbortController();
+
+    fetchDatasets(ac.signal)
+      .then((ds) => {
+        const allHeights = ds.map((c) => c.availableHeightsMeters).flat();
+        setHeights(allHeights);
+      })
+      .catch((e) => {
+        if (e?.name !== "AbortError") console.error(e);
+      });
+
+    return () => ac.abort();
+  }, []);
+
+  useEffect(() => {
+    if (heightMeters === null && heights.length > 0) {
+      setHeightMeters(heights[0]);
     }
-  }, [props.heights, heightMeters]);
+  }, [heights, heightMeters]);
 
   useEffect(() => {
     if (heightMeters === null || !currentWeather) {
@@ -145,12 +161,12 @@ export function Controls(props: Props) {
             className="control-select"
             value={heightMeters ?? ""}
             onChange={(e) => setHeightMeters(Number(e.target.value))}
-            disabled={props.heights.length === 0}
+            disabled={heights.length === 0}
           >
-            {props.heights.length === 0 ? (
+            {heights.length === 0 ? (
               <option value="">(keine Höhen verfügbar)</option>
             ) : (
-              props.heights.map((h) => (
+              heights.map((h) => (
                 <option key={h} value={h}>
                   {h} m
                 </option>
