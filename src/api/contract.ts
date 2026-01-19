@@ -65,3 +65,11 @@ export type WindFieldGrid = {
   lon?: Float32Array;
   lat?: Float32Array;
 };
+
+export type WeatherTimestep = {
+  timestep: number;
+  datetime: string;
+  label: string;
+  wsRef: number;
+  wdRef: number;
+};

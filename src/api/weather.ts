@@ -1,10 +1,4 @@
-export type WeatherTimestep = {
-  timestep: number;
-  datetime: string;
-  label: string;
-  wsRef: number;
-  wdRef: number;
-};
+import type { WeatherTimestep } from "./contract";
 
 type OpenMeteoResponse = {
   latitude: number;
@@ -21,7 +15,7 @@ export async function fetchWeatherTimesteps(
   lat: number,
   lon: number,
   startDate: string,
-  endDate?: string
+  endDate?: string,
 ): Promise<WeatherTimestep[]> {
   const params = new URLSearchParams({
     latitude: lat.toFixed(6),
@@ -71,7 +65,7 @@ export async function fetchWeatherTimesteps(
 
 export function interpolateTimesteps(
   hourlyData: WeatherTimestep[],
-  intervalMinutes: number
+  intervalMinutes: number,
 ): WeatherTimestep[] {
   if (intervalMinutes === 60 || hourlyData.length === 0) {
     return hourlyData;
