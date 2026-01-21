@@ -73,7 +73,7 @@ export function Controls(props: Props) {
     };
 
     props.onQueryControls(queryControls);
-  }, [heightMeters, currentWeatherAtIndex, props]);
+  }, [heightMeters, currentWeatherAtIndex, props.onQueryControls]);
 
   useEffect(() => {
     if (props.mapCenter) {

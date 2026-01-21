@@ -20,6 +20,10 @@ export function App() {
 
   const [mapQuery, setMapQuery] = useState<WindQuery_Map | null>(null);
 
+  const handleMapQuery = useCallback((query: WindQuery_Map) => {
+    setMapQuery(query);
+  }, []);
+
   const [mapCenter, setMapCenter] = useState<
     { lon: number; lat: number } | undefined
   >();
@@ -29,6 +33,13 @@ export function App() {
 
   const [queryControls, setQueryControls] = useState<WindQuery_Controls | null>(
     null,
+  );
+
+  const handleQueryControls = useCallback(
+    (controls: WindQuery_Controls | null) => {
+      setQueryControls(controls);
+    },
+    [],
   );
 
   useEffect(() => {
@@ -102,7 +113,7 @@ export function App() {
       <div className="app-main">
         <MapView
           windField={windField}
-          onMapQuery={setMapQuery}
+          onMapQuery={handleMapQuery}
           onMapMove={onMapMove}
         />
 
@@ -112,7 +123,7 @@ export function App() {
           permalinkCopied={permalinkCopied}
           mapCenter={mapCenter}
           queryInProgress={queryInProgress}
-          onQueryControls={setQueryControls}
+          onQueryControls={handleQueryControls}
         />
       </div>
 

@@ -52,7 +52,7 @@ export function useMapQuery(params: UseMapQueryParams): void {
   useEffect(() => {
     if (!map) return;
     emitQuery();
-  }, [map, resolution, emitQuery]);
+  }, [map, resolution]);
 
   useEffect(() => {
     if (!map) return;
@@ -66,5 +66,5 @@ export function useMapQuery(params: UseMapQueryParams): void {
       map.off("zoomend", emitQuery);
       map.off("load", emitQuery);
     };
-  }, [map, emitQuery]);
+  }, [map]);
 }
