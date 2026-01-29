@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { fetchWindFieldHttp } from "../api/wind";
 import type { WindQuery, WindFieldGrid } from "../api/contract";
 
@@ -13,14 +13,24 @@ export function useWindField(query: WindQuery | null): UseWindFieldReturn {
   const [loading, setLoading] = useState(false);
   const [queryInProgress, setQueryInProgress] = useState(false);
 
-  useEffect(() => {
-    if (!query) return;
+  const pendingRef = useRef(false);
+  const queuedQueryRef = useRef<WindQuery | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-    const ac = new AbortController();
+  const executeQuery = useCallback((q: WindQuery) => {
+    if (pendingRef.current) {
+      queuedQueryRef.current = q;
+      return;
+    }
+
+    pendingRef.current = true;
     setLoading(true);
     setQueryInProgress(true);
 
-    fetchWindFieldHttp(query, ac.signal)
+    const ac = new AbortController();
+    abortControllerRef.current = ac;
+
+    fetchWindFieldHttp(q, ac.signal)
       .then(setWindField)
       .catch((err) => {
         if (err?.name !== "AbortError") {
@@ -28,12 +38,28 @@ export function useWindField(query: WindQuery | null): UseWindFieldReturn {
         }
       })
       .finally(() => {
+        pendingRef.current = false;
+        abortControllerRef.current = null;
         setLoading(false);
         setQueryInProgress(false);
-      });
 
-    return () => ac.abort();
-  }, [query]);
+        const queued = queuedQueryRef.current;
+        if (queued) {
+          queuedQueryRef.current = null;
+          executeQuery(queued);
+        }
+      });
+  }, []);
+
+  useEffect(() => {
+    if (!query) return;
+    executeQuery(query);
+
+    return () => {
+      queuedQueryRef.current = null;
+      abortControllerRef.current?.abort();
+    };
+  }, [query, executeQuery]);
 
   return {
     windField,
