@@ -1,6 +1,6 @@
+import { render, screen } from "@testing-library/react";
+import { Footer } from "./Footer";
 import { describe, it, expect } from "vitest";
-import { render, screen } from "../../src/test/utils";
-import { Footer } from "../../src/ui/Footer";
 
 describe("Footer Component", () => {
   it("should render OSM attribution links", () => {
@@ -10,7 +10,7 @@ describe("Footer Component", () => {
     expect(osmLink).toBeInTheDocument();
     expect(osmLink.closest("a")).toHaveAttribute(
       "href",
-      "https://www.openstreetmap.org/copyright"
+      "https://www.openstreetmap.org/copyright",
     );
   });
 
@@ -21,7 +21,7 @@ describe("Footer Component", () => {
     expect(mapLibreLink).toBeInTheDocument();
     expect(mapLibreLink.closest("a")).toHaveAttribute(
       "href",
-      "https://maplibre.org/"
+      "https://maplibre.org/",
     );
   });
 
@@ -60,7 +60,7 @@ describe("Footer Component", () => {
 
   it("should apply correct CSS class for up status", () => {
     const { container } = render(
-      <Footer backendUp={true} lastCheck={new Date()} />
+      <Footer backendUp={true} lastCheck={new Date()} />,
     );
 
     const statusDiv = container.querySelector(".footer-status");
@@ -69,7 +69,7 @@ describe("Footer Component", () => {
 
   it("should apply correct CSS class for down status", () => {
     const { container } = render(
-      <Footer backendUp={false} lastCheck={new Date()} />
+      <Footer backendUp={false} lastCheck={new Date()} />,
     );
 
     const statusDiv = container.querySelector(".footer-status");

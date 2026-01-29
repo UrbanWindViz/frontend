@@ -9,11 +9,10 @@ export default defineConfig({
     environment: "happy-dom",
     setupFiles: ["./src/test/setup.ts"],
     typecheck: {
-      include: ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
+      include: ["**/*.test.ts", "**/*.test.tsx"],
     },
     css: true,
-    include: ["tests/unit/**/*.test.ts", "tests/component/**/*.test.tsx"],
-    exclude: ["tests/e2e/**/*", "node_modules/**/*"],
+    exclude: ["e2e/**/*", "node_modules/**/*"],
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
