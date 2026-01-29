@@ -4,9 +4,11 @@ import { MapboxOverlay } from "@deck.gl/mapbox";
 import type { WindFieldGrid, WindQuery_Map } from "../api/contract";
 import { buildWindArrowLayer } from "./WindLayer";
 import { buildWindHeatmapLayer } from "./HeatmapLayer";
+import { buildWindParticleLayer } from "./ParticleLayer";
 import { VISUALIZATION_OPTIONS, type VisualizationType } from "./config";
 import { useUrlState } from "../util/urlStats";
 import { useMapQuery } from "../hooks";
+import { useParticleAnimation } from "../hooks/useParticleAnimation";
 
 type Props = {
   windField: WindFieldGrid | null;
@@ -46,6 +48,12 @@ export function MapView({ windField, onMapQuery, onMapMove }: Props) {
     onMapMove,
   });
 
+  const particles = useParticleAnimation(
+    windField,
+    visualizationType === "particles",
+    resolution
+  );
+
   const layers = useMemo(() => {
     if (!windField) return [];
 
@@ -54,10 +62,12 @@ export function MapView({ windField, onMapQuery, onMapMove }: Props) {
         return [buildWindArrowLayer(windField)];
       case "heatmap":
         return [buildWindHeatmapLayer(windField)];
+      case "particles":
+        return [buildWindParticleLayer(particles, windField)];
       default:
         return [];
     }
-  }, [windField, visualizationType]);
+  }, [windField, visualizationType, particles]);
 
   useEffect(() => {
     if (!containerRef.current) return;
