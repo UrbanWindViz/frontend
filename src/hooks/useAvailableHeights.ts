@@ -17,9 +17,11 @@ export function useAvailableHeights(): UseAvailableHeightsReturn {
 
     fetchDatasets(ac.signal)
       .then((datasets) => {
-        const allHeights = datasets
-          .map((dataset) => dataset.availableHeightsMeters)
-          .flat();
+        const allHeights = [
+          ...new Set(
+            datasets.map((dataset) => dataset.availableHeightsMeters).flat(),
+          ),
+        ].sort((a, b) => a - b);
         setHeights(allHeights);
         setLoading(false);
       })
