@@ -5,6 +5,7 @@ import type { WindFieldGrid, WindQuery_Map } from "../api/contract";
 import { buildWindArrowLayer } from "./WindLayer";
 import { buildWindHeatmapLayer } from "./HeatmapLayer";
 import { buildWindParticleLayer } from "./ParticleLayer";
+import { buildIntensityMapLayer } from "./IntensityMapLayer";
 import { VISUALIZATION_OPTIONS, type VisualizationType } from "./config";
 import { useUrlState } from "../util/urlStats";
 import { useMapQuery } from "../hooks";
@@ -35,6 +36,7 @@ export function MapView({ windField, onMapQuery, onMapMove }: Props) {
       : { nx: 100, ny: 100 },
   );
   const [showSettings, setShowSettings] = useState(false);
+  const [showIntensityLayer, setShowIntensityLayer] = useState(false);
 
   const mapRef = useRef<Map | null>(null);
   const overlayRef = useRef<MapboxOverlay | null>(null);
@@ -57,17 +59,33 @@ export function MapView({ windField, onMapQuery, onMapMove }: Props) {
   const layers = useMemo(() => {
     if (!windField) return [];
 
+    const resultLayers: any[] = [];
+
+    if (showIntensityLayer) {
+      resultLayers.push(...buildIntensityMapLayer(windField));
+    }
+
     switch (visualizationType) {
       case "arrows":
-        return [buildWindArrowLayer(windField)];
+        resultLayers.push(buildWindArrowLayer(windField));
+        break;
       case "heatmap":
-        return [buildWindHeatmapLayer(windField)];
+        resultLayers.push(buildWindHeatmapLayer(windField));
+        break;
       case "particles":
-        return [buildWindParticleLayer(particles, windField)];
-      default:
-        return [];
+        resultLayers.push(buildWindParticleLayer(particles, windField));
+        break;
     }
-  }, [windField, visualizationType, particles]);
+
+    return resultLayers;
+  }, [
+    windField,
+    visualizationType,
+    particles,
+    trailParticles,
+    trailDuration,
+    showIntensityLayer,
+  ]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -217,6 +235,36 @@ export function MapView({ windField, onMapQuery, onMapMove }: Props) {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div style={{ marginBottom: "12px" }}>
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                fontSize: "12px",
+                fontWeight: "600",
+                cursor: "pointer",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={showIntensityLayer}
+                onChange={(e) => setShowIntensityLayer(e.target.checked)}
+                style={{ marginRight: "8px" }}
+              />
+              Intensitäts-Hintergrund
+            </label>
+            <div
+              style={{
+                fontSize: "11px",
+                color: "#666",
+                marginTop: "2px",
+                marginLeft: "20px",
+              }}
+            >
+              Zeigt Windstärke als Farbverlauf
+            </div>
           </div>
 
           <div>
