@@ -20,7 +20,7 @@ export function App() {
 
   const [mapQuery, setMapQuery] = useState<WindQuery_Map | null>(null);
 
-  const handleMapQuery = useCallback((query: WindQuery_Map) => {
+  const handleMapQuery = useCallback((query: WindQuery_Map | null) => {
     setMapQuery(query);
   }, []);
 

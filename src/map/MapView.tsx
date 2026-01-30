@@ -12,7 +12,7 @@ import { useParticleAnimation } from "../hooks/useParticleAnimation";
 
 type Props = {
   windField: WindFieldGrid | null;
-  onMapQuery: (query: WindQuery_Map) => void;
+  onMapQuery: (query: WindQuery_Map | null) => void;
   onMapMove?: (center: { lon: number; lat: number }, zoom: number) => void;
 };
 
