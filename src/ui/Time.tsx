@@ -1,4 +1,4 @@
-import type { WeatherTimestep } from "../api/weather";
+import type { WeatherTimestep } from "../api/contract";
 
 type Props = {
   timesteps: WeatherTimestep[];

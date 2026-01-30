@@ -35,6 +35,8 @@ export function App() {
     null,
   );
 
+  const [weatherError, setWeatherError] = useState<Error | null>(null);
+
   const handleQueryControls = useCallback(
     (controls: WindQuery_Controls | null) => {
       setQueryControls(controls);
@@ -124,10 +126,11 @@ export function App() {
           mapCenter={mapCenter}
           queryInProgress={queryInProgress}
           onQueryControls={handleQueryControls}
+          onWeatherError={setWeatherError}
         />
       </div>
 
-      <Footer backendUp={backendUp} lastCheck={lastCheck} />
+      <Footer backendUp={backendUp} lastCheck={lastCheck} meteoError={weatherError} />
     </div>
   );
 }

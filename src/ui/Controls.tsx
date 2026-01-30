@@ -13,13 +13,13 @@ type Props = {
   mapCenter?: { lon: number; lat: number };
   queryInProgress: boolean;
   onQueryControls: (controls: WindQuery_Controls | null) => void;
+  onWeatherError?: (error: Error | null) => void;
 };
 
 export function Controls(props: Props) {
   const urlState = useUrlState();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [timeControlMinimized, setTimeControlMinimized] = useState(false);
-
   const { heights } = useAvailableHeights();
 
   const [heightMeters, setHeightMeters] = useState<number | null>(
@@ -31,16 +31,19 @@ export function Controls(props: Props) {
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [currentDate, setCurrentDate] = useState(getDefaultDate());
 
-  const { timesteps: weatherTimesteps, loading: weatherLoading } =
-    useWeatherData(
-      {
-        lat: props.mapCenter?.lat,
-        lon: props.mapCenter?.lon,
-        date: currentDate,
-        timestepInterval,
-      },
-      0,
-    );
+  const {
+    timesteps: weatherTimesteps,
+    loading: weatherLoading,
+    error: weatherError,
+  } = useWeatherData(
+    {
+      lat: props.mapCenter?.lat,
+      lon: props.mapCenter?.lon,
+      date: currentDate,
+      timestepInterval,
+    },
+    0,
+  );
 
   const { currentIndex, setCurrentIndex } = useAnimation(
     weatherTimesteps.length,
@@ -80,6 +83,10 @@ export function Controls(props: Props) {
       setPlaying(false);
     }
   }, [props.mapCenter]);
+
+  useEffect(() => {
+    props.onWeatherError?.(weatherError);
+  }, [weatherError, props.onWeatherError]);
 
   if (isCollapsed) {
     return (

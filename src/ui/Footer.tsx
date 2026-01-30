@@ -1,9 +1,10 @@
 type Props = {
   backendUp: boolean | null;
   lastCheck: Date | null;
+  meteoError?: Error | null;
 };
 
-export function Footer({ backendUp, lastCheck }: Props) {
+export function Footer({ backendUp, lastCheck, meteoError }: Props) {
   const statusClass =
     backendUp === null ? "checking" : backendUp ? "up" : "down";
   const statusText =
@@ -34,6 +35,14 @@ export function Footer({ backendUp, lastCheck }: Props) {
             MapLibre GL
           </a>
         </span>
+        {meteoError && (
+          <>
+            <span>|</span>
+            <span className="meteo-warning" title={meteoError.message}>
+              Meteo: stale data
+            </span>
+          </>
+        )}
       </div>
 
       <div className={`footer-status ${statusClass}`}>

@@ -1,9 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
-import {
-  fetchWeatherTimesteps,
-  interpolateTimesteps,
-  type WeatherTimestep,
-} from "../api/weather";
+import { fetchWeatherTimesteps, interpolateTimesteps } from "../api/weather";
+import type { WeatherTimestep } from "../api/contract";
 
 type UseWeatherDataParams = {
   lat?: number;
@@ -16,6 +13,7 @@ type UseWeatherDataReturn = {
   hourlyData: WeatherTimestep[];
   timesteps: WeatherTimestep[];
   loading: boolean;
+  error: Error | null;
   currentWeather: WeatherTimestep | undefined;
 };
 
@@ -27,26 +25,27 @@ export function useWeatherData(
 
   const [hourlyData, setHourlyData] = useState<WeatherTimestep[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
   const timesteps = useMemo(() => {
     return interpolateTimesteps(hourlyData, timestepInterval);
   }, [hourlyData, timestepInterval]);
 
   useEffect(() => {
-    if (lat === undefined || lon === undefined) {
-      setHourlyData([]);
-      return;
-    }
+    if (lat === undefined || lon === undefined) return;
 
     setLoading(true);
 
     fetchWeatherTimesteps(lat, lon, date)
       .then((data) => {
         setHourlyData(data);
+        setError(null);
       })
       .catch((err) => {
         console.error("Failed to load weather data:", err);
-        setHourlyData([]);
+        setError(
+          err instanceof Error ? err : new Error("Failed to load weather data"),
+        );
       })
       .finally(() => {
         setLoading(false);
@@ -59,6 +58,7 @@ export function useWeatherData(
     hourlyData,
     timesteps,
     loading,
+    error,
     currentWeather,
   };
 }

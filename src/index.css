@@ -102,6 +102,12 @@ html, body, #root {
   opacity: 0.6;
 }
 
+.meteo-warning {
+  color: #e65100;
+  font-weight: 500;
+  cursor: help;
+}
+
 /* Controls Panel - Expanded */
 .controls-panel {
   position: absolute;
