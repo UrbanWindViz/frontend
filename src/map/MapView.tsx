@@ -5,11 +5,13 @@ import type { WindFieldGrid, WindQuery_Map } from "../api/contract";
 import { buildWindArrowLayer } from "./WindLayer";
 import { buildWindHeatmapLayer } from "./HeatmapLayer";
 import { buildWindParticleLayer } from "./ParticleLayer";
+import { buildTrailParticleLayerSmooth } from "./TrailParticleLayer";
 import { buildIntensityMapLayer } from "./IntensityMapLayer";
 import { VISUALIZATION_OPTIONS, type VisualizationType } from "./config";
 import { useUrlState } from "../util/urlStats";
 import { useMapQuery } from "../hooks";
 import { useParticleAnimation } from "../hooks/useParticleAnimation";
+import { useTrailParticleAnimation } from "../hooks/useTrailParticleAnimation";
 
 type Props = {
   windField: WindFieldGrid | null;
@@ -53,8 +55,14 @@ export function MapView({ windField, onMapQuery, onMapMove }: Props) {
   const particles = useParticleAnimation(
     windField,
     visualizationType === "particles",
-    resolution
+    resolution,
   );
+
+  const { particles: trailParticles, trailDuration } =
+    useTrailParticleAnimation(
+      windField,
+      visualizationType === "trail-particles",
+    );
 
   const layers = useMemo(() => {
     if (!windField) return [];
@@ -74,6 +82,15 @@ export function MapView({ windField, onMapQuery, onMapMove }: Props) {
         break;
       case "particles":
         resultLayers.push(buildWindParticleLayer(particles, windField));
+        break;
+      case "trail-particles":
+        resultLayers.push(
+          ...buildTrailParticleLayerSmooth(
+            trailParticles,
+            windField,
+            trailDuration,
+          ),
+        );
         break;
     }
 
