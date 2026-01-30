@@ -1,3 +1,5 @@
+const useMock = import.meta.env.VITE_USE_MOCK_DATA === "true";
+
 function requireEnv(name: string): string {
   const value = import.meta.env[name];
   if (!value) {
@@ -6,4 +8,6 @@ function requireEnv(name: string): string {
   return value;
 }
 
-export const API_BASE = requireEnv("VITE_API_BASE_URL").replace(/\/+$/, "");
+export const API_BASE = useMock
+  ? ""
+  : requireEnv("VITE_API_BASE_URL").replace(/\/+$/, "");

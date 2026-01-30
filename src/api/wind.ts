@@ -12,18 +12,19 @@ export async function fetchWindFieldHttp(
   q: WindQuery,
   signal?: AbortSignal
 ): Promise<WindFieldGrid> {
-  const url = new URL(`${API_BASE}/api/wind`);
-  url.searchParams.set("heightMeters", String(q.heightMeters));
-  url.searchParams.set("minLon", String(q.bbox.minLon));
-  url.searchParams.set("minLat", String(q.bbox.minLat));
-  url.searchParams.set("maxLon", String(q.bbox.maxLon));
-  url.searchParams.set("maxLat", String(q.bbox.maxLat));
-  url.searchParams.set("nx", String(q.resolution.nx));
-  url.searchParams.set("ny", String(q.resolution.ny));
-  url.searchParams.set("wdRef", String(q.wdRef));
-  url.searchParams.set("wsRef", String(q.wsRef));
+  const params = new URLSearchParams({
+    heightMeters: String(q.heightMeters),
+    minLon: String(q.bbox.minLon),
+    minLat: String(q.bbox.minLat),
+    maxLon: String(q.bbox.maxLon),
+    maxLat: String(q.bbox.maxLat),
+    nx: String(q.resolution.nx),
+    ny: String(q.resolution.ny),
+    wdRef: String(q.wdRef),
+    wsRef: String(q.wsRef),
+  });
 
-  const res = await fetch(url.toString(), { signal });
+  const res = await fetch(`${API_BASE}/api/wind?${params}`, { signal });
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(`Backend error ${res.status}: ${text || res.statusText}`);
