@@ -3,7 +3,7 @@ import { TimeControl } from "./Time";
 import { getDefaultDate } from "../api/weather";
 import { useAnimation } from "../util/animation";
 import { useUrlState } from "../util/urlStats";
-import { useWeatherData, useAvailableHeights } from "../hooks";
+import { useWeatherData } from "../hooks";
 import type { WindQuery_Controls } from "../api/contract";
 
 type Props = {
@@ -13,6 +13,7 @@ type Props = {
   mapCenter?: { lon: number; lat: number };
   queryInProgress: boolean;
   onQueryControls: (controls: WindQuery_Controls | null) => void;
+  heights: number[];
   onWeatherError?: (error: Error | null) => void;
 };
 
@@ -20,7 +21,7 @@ export function Controls(props: Props) {
   const urlState = useUrlState();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [timeControlMinimized, setTimeControlMinimized] = useState(false);
-  const { heights } = useAvailableHeights();
+  const { heights } = props;
 
   const [heightMeters, setHeightMeters] = useState<number | null>(
     urlState.heightMeters ?? null,

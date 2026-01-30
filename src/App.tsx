@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Controls } from "./ui/Controls";
 import { MapView } from "./map/MapView";
-import { Footer } from "./ui/Footer";
+import { Footer, type DataSourceInfo } from "./ui/Footer";
 import { checkHealth } from "./api/health";
 import type {
   WindQuery_Controls,
   WindQuery_Map,
   WindQuery,
 } from "./api/contract";
-import { useWindField } from "./hooks";
+import { useAvailableHeights, useWindField } from "./hooks";
 import "./index.css";
 import { buildPermalink } from "./util/urlStats";
 
@@ -17,6 +17,8 @@ const HEALTH_INTERVAL_MS = 10_000;
 export function App() {
   const [backendUp, setBackendUp] = useState<boolean | null>(null);
   const [lastCheck, setLastCheck] = useState<Date | null>(null);
+
+  const { heights, datasets } = useAvailableHeights();
 
   const [mapQuery, setMapQuery] = useState<WindQuery_Map | null>(null);
 
@@ -87,6 +89,13 @@ export function App() {
 
   const { windField, loading, queryInProgress } = useWindField(query);
 
+  const dataSource = useMemo<DataSourceInfo>(() => {
+    return {
+      type: "backend",
+      datasetNames: datasets.map((d) => d.name),
+    };
+  }, [datasets]);
+
   const onMapMove = useCallback(
     (center: { lon: number; lat: number }, zoom: number) => {
       setMapCenter(center);
@@ -126,11 +135,17 @@ export function App() {
           mapCenter={mapCenter}
           queryInProgress={queryInProgress}
           onQueryControls={handleQueryControls}
+          heights={heights}
           onWeatherError={setWeatherError}
         />
       </div>
 
-      <Footer backendUp={backendUp} lastCheck={lastCheck} meteoError={weatherError} />
+      <Footer
+        backendUp={backendUp}
+        lastCheck={lastCheck}
+        dataSource={dataSource}
+        meteoError={weatherError}
+      />
     </div>
   );
 }

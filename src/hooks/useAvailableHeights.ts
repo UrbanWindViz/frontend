@@ -1,14 +1,17 @@
 import { useState, useEffect } from "react";
 import { fetchDatasets } from "../api/datasets";
+import type { DatasetInfo } from "../api/contract";
 
 type UseAvailableHeightsReturn = {
   heights: number[];
+  datasets: DatasetInfo[];
   loading: boolean;
   error: Error | null;
 };
 
 export function useAvailableHeights(): UseAvailableHeightsReturn {
   const [heights, setHeights] = useState<number[]>([]);
+  const [datasets, setDatasets] = useState<DatasetInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -16,10 +19,13 @@ export function useAvailableHeights(): UseAvailableHeightsReturn {
     const ac = new AbortController();
 
     fetchDatasets(ac.signal)
-      .then((datasets) => {
+      .then((fetchedDatasets) => {
+        setDatasets(fetchedDatasets);
         const allHeights = [
           ...new Set(
-            datasets.map((dataset) => dataset.availableHeightsMeters).flat(),
+            fetchedDatasets
+              .map((dataset) => dataset.availableHeightsMeters)
+              .flat(),
           ),
         ].sort((a, b) => a - b);
         setHeights(allHeights);
@@ -38,6 +44,7 @@ export function useAvailableHeights(): UseAvailableHeightsReturn {
 
   return {
     heights,
+    datasets,
     loading,
     error,
   };
