@@ -12,6 +12,8 @@ import { useAvailableHeights, useWindField } from "./hooks";
 import "./index.css";
 import { buildPermalink } from "./util/urlStats";
 
+const MIN_ZOOM_FOR_BACKEND = 13;
+
 const HEALTH_INTERVAL_MS = 10_000;
 
 export function App() {
@@ -30,6 +32,8 @@ export function App() {
     { lon: number; lat: number } | undefined
   >();
   const [mapZoom, setMapZoom] = useState<number | undefined>();
+
+  const isZoomedOut = mapZoom !== undefined && mapZoom < MIN_ZOOM_FOR_BACKEND;
 
   const [permalinkCopied, setPermalinkCopied] = useState(false);
 
@@ -87,7 +91,14 @@ export function App() {
     };
   }, [mapQuery, queryControls]);
 
-  const { windField, loading, queryInProgress } = useWindField(query);
+  const {
+    windField: backendWindField,
+    loading,
+    queryInProgress,
+  } = useWindField(query);
+
+  const windField = isZoomedOut ? null : backendWindField;
+  const isLoading = loading;
 
   const dataSource = useMemo<DataSourceInfo>(() => {
     return {
@@ -129,7 +140,7 @@ export function App() {
         />
 
         <Controls
-          loading={loading}
+          loading={isLoading}
           onGeneratePermalink={handleGeneratePermalink}
           permalinkCopied={permalinkCopied}
           mapCenter={mapCenter}
